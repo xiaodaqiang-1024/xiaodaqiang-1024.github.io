@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="7.6 代码：sleep和wakeup让我们看看sleep（kernel&#x2F;proc.c:548）和wakeup（kernel&#x2F;proc.c:582）的实现。其基本思想是让sleep将当前进程标记为SLEEPING，然后调用sched释放CPU；wakeup查找在给定等待通道上休眠的进程，并将其标记为RUNNABLE。sleep和wakeup的调用者可以使用任何相互间方便的数字作">
+<meta property="og:type" content="article">
+<meta property="og:title" content="肖大强的个人博客">
+<meta property="og:url" content="http://example.com/2022/10/06/tranlate_books/book-riscv-rev1/c7/s6/index.html">
+<meta property="og:site_name" content="肖大强的个人博客">
+<meta property="og:description" content="7.6 代码：sleep和wakeup让我们看看sleep（kernel&#x2F;proc.c:548）和wakeup（kernel&#x2F;proc.c:582）的实现。其基本思想是让sleep将当前进程标记为SLEEPING，然后调用sched释放CPU；wakeup查找在给定等待通道上休眠的进程，并将其标记为RUNNABLE。sleep和wakeup的调用者可以使用任何相互间方便的数字作">
+<meta property="og:locale">
+<meta property="article:published_time" content="2022-10-06T15:06:31.908Z">
+<meta property="article:modified_time" content="2022-10-06T14:55:45.039Z">
+<meta property="article:author" content="xiaoq">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/10/06/tranlate_books/book-riscv-rev1/c7/s6/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title> | 肖大强的个人博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">肖大强的个人博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/10/06/tranlate_books/book-riscv-rev1/c7/s6/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="xiaoq">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="肖大强的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-10-06 23:06:31 / Modified: 22:55:45" itemprop="dateCreated datePublished" datetime="2022-10-06T23:06:31+08:00">2022-10-06</time>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/10/06/tranlate_books/book-riscv-rev1/c7/s6/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/10/06/tranlate_books/book-riscv-rev1/c7/s6/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="7-6-代码：sleep和wakeup"><a href="#7-6-代码：sleep和wakeup" class="headerlink" title="7.6 代码：sleep和wakeup"></a>7.6 代码：sleep和wakeup</h1><p>让我们看看<code>sleep</code>（<em><strong>kernel&#x2F;proc.c</strong></em>:548）和<code>wakeup</code>（<em><strong>kernel&#x2F;proc.c</strong></em>:582）的实现。其基本思想是让<code>sleep</code>将当前进程标记为<code>SLEEPING</code>，然后调用<code>sched</code>释放CPU；<code>wakeup</code>查找在给定等待通道上休眠的进程，并将其标记为<code>RUNNABLE</code>。<code>sleep</code>和<code>wakeup</code>的调用者可以使用任何相互间方便的数字作为通道。Xv6通常使用等待过程中涉及的内核数据结构的地址。</p>
+<p><code>sleep</code>获得<code>p-&gt;lock</code>（<em><strong>kernel&#x2F;proc.c</strong></em>:559）。要进入睡眠的进程现在同时持有<code>p-&gt;lock</code>和<code>lk</code>。在调用者（示例中为<code>P</code>）中持有<code>lk</code>是必要的：它确保没有其他进程（在示例中指一个运行的<code>V</code>）可以启动<code>wakeup(chan)</code>调用。既然<code>sleep</code>持有<code>p-&gt;lock</code>，那么释放<code>lk</code>是安全的：其他进程可能会启动对<code>wakeup(chan)</code>的调用，但是<code>wakeup</code>将等待获取<code>p-&gt;lock</code>，因此将等待<code>sleep</code>把进程置于睡眠状态的完成，以防止<code>wakeup</code>错过<code>sleep</code>。</p>
+<p>还有一个小问题：如果<code>lk</code>和<code>p-&gt;lock</code>是同一个锁，那么如果<code>sleep</code>试图获取<code>p-&gt;lock</code>就会自身死锁。但是，如果调用<code>sleep</code>的进程已经持有<code>p-&gt;lock</code>，那么它不需要做更多的事情来避免错过并发的<code>wakeup</code>。当<code>wait</code>（<em><strong>kernel&#x2F;proc.c</strong></em>:582）持有<code>p-&gt;lock</code>调用<code>sleep</code>时，就会出现这种情况。</p>
+<p>由于<code>sleep</code>只持有<code>p-&gt;lock</code>而无其他，它可以通过记录睡眠通道、将进程状态更改为<code>SLEEPING</code>并调用<code>sched</code>（<em><strong>kernel&#x2F;proc.c</strong></em>:564-567）将进程置于睡眠状态。过一会儿，我们就会明白为什么在进程被标记为<code>SLEEPING</code>之前不将<code>p-&gt;lock</code>释放（由<code>scheduler</code>）是至关重要的。</p>
+<p>在某个时刻，一个进程将获取条件锁，设置睡眠者正在等待的条件，并调用<code>wakeup(chan)</code>。在持有状态锁时调用<code>wakeup</code>非常重要*[注]<em>。<code>wakeup</code>遍历进程表（</em><strong>kernel&#x2F;proc.c</strong>*:582）。它获取它所检查的每个进程的<code>p-&gt;lock</code>，这既是因为它可能会操纵该进程的状态，也是因为<code>p-&gt;lock</code>确保<code>sleep</code>和<code>wakeup</code>不会彼此错过。当<code>wakeup</code>发现一个<code>SLEEPING</code>的进程且<code>chan</code>相匹配时，它会将该进程的状态更改为<code>RUNNABLE</code>。调度器下次运行时，将看到进程已准备好运行。</p>
+<blockquote>
+<p>注：严格地说，<code>wakeup</code>只需跟在<code>acquire</code>之后就足够了（也就是说，可以在<code>release</code>之后调用<code>wakeup</code>）</p>
+</blockquote>
+<p>为什么<code>sleep</code>和<code>wakeup</code>的用锁规则能确保睡眠进程不会错过唤醒？休眠进程从检查条件之前的某处到标记为休眠之后的某处，要么持有条件锁，要么持有其自身的<code>p-&gt;lock</code>或同时持有两者。调用<code>wakeup</code>的进程在<code>wakeup</code>的循环中同时持有这两个锁。因此，要么唤醒器（waker）在消费者线程检查条件之前使条件为真；要么唤醒器的<code>wakeup</code>在睡眠线程标记为<code>SLEEPING</code>后对其进行严格检查。然后<code>wakeup</code>将看到睡眠进程并将其唤醒（除非有其他东西首先将其唤醒）。</p>
+<p>有时，多个进程在同一个通道上睡眠；例如，多个进程读取同一个管道。一个单独的<code>wakeup</code>调用就能把他们全部唤醒。其中一个将首先运行并获取与<code>sleep</code>一同调用的锁，并且（在管道例子中）读取在管道中等待的任何数据。尽管被唤醒，其他进程将发现没有要读取的数据。从他们的角度来看，醒来是“虚假的”，他们必须再次睡眠。因此，在检查条件的循环中总是调用<code>sleep</code>。</p>
+<p>如果两次使用<code>sleep/wakeup</code>时意外选择了相同的通道，则不会造成任何伤害：它们将看到虚假的唤醒，但如上所述的循环将容忍此问题。<code>sleep/wakeup</code>的魅力在于它既轻量级（不需要创建特殊的数据结构来充当睡眠通道），又提供了一层抽象（调用者不需要知道他们正在与哪个特定进程进行交互）。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/10/06/tranlate_books/book-riscv-rev1/c7/s8/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/10/06/tranlate_books/book-riscv-rev1/c7/s5/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#7-6-%E4%BB%A3%E7%A0%81%EF%BC%9Asleep%E5%92%8Cwakeup"><span class="nav-number">1.</span> <span class="nav-text">7.6 代码：sleep和wakeup</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">xiaoq</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">xiaoq</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'nPTQNF98hlhFVhx3uT28h3EW-gzGzoHsz',
+      appKey     : 'Hj5CW3nJJnJ3rBlGeKK8XQLa',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

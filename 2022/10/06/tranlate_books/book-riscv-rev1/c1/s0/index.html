@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="第一章 操作系统接口操作系统的任务是在多个程序之间共享一台计算机，并提供比硬件本身支持的更有用的服务。操作系统管理和抽象底层硬件，例如文字处理器不需要关心使用哪种类型的磁盘硬件。一个操作系统在多个程序之间共享硬件，这样它们就可以(或者看起来可以)同时运行。最后，操作系统为程序提供了可控的交互方式，这样它们就可以共享数据或者一起工作。 操作系统通过接口向用户程序提供服务。设计良好的接口是很困难的。一">
+<meta property="og:type" content="article">
+<meta property="og:title" content="肖大强的个人博客">
+<meta property="og:url" content="http://example.com/2022/10/06/tranlate_books/book-riscv-rev1/c1/s0/index.html">
+<meta property="og:site_name" content="肖大强的个人博客">
+<meta property="og:description" content="第一章 操作系统接口操作系统的任务是在多个程序之间共享一台计算机，并提供比硬件本身支持的更有用的服务。操作系统管理和抽象底层硬件，例如文字处理器不需要关心使用哪种类型的磁盘硬件。一个操作系统在多个程序之间共享硬件，这样它们就可以(或者看起来可以)同时运行。最后，操作系统为程序提供了可控的交互方式，这样它们就可以共享数据或者一起工作。 操作系统通过接口向用户程序提供服务。设计良好的接口是很困难的。一">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/images/c1/p1.png">
+<meta property="article:published_time" content="2022-10-06T15:06:31.611Z">
+<meta property="article:modified_time" content="2022-10-06T14:55:45.008Z">
+<meta property="article:author" content="xiaoq">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/c1/p1.png">
+
+<link rel="canonical" href="http://example.com/2022/10/06/tranlate_books/book-riscv-rev1/c1/s0/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title> | 肖大强的个人博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">肖大强的个人博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/10/06/tranlate_books/book-riscv-rev1/c1/s0/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="xiaoq">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="肖大强的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-10-06 23:06:31 / Modified: 22:55:45" itemprop="dateCreated datePublished" datetime="2022-10-06T23:06:31+08:00">2022-10-06</time>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/10/06/tranlate_books/book-riscv-rev1/c1/s0/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/10/06/tranlate_books/book-riscv-rev1/c1/s0/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="第一章-操作系统接口"><a href="#第一章-操作系统接口" class="headerlink" title="第一章 操作系统接口"></a>第一章 操作系统接口</h1><p>操作系统的任务是在多个程序之间共享一台计算机，并提供比硬件本身支持的更有用的服务。操作系统管理和抽象底层硬件，例如文字处理器不需要关心使用哪种类型的磁盘硬件。一个操作系统在多个程序之间共享硬件，这样它们就可以(或者看起来可以)同时运行。最后，操作系统为程序提供了可控的交互方式，这样它们就可以共享数据或者一起工作。</p>
+<p>操作系统通过接口向用户程序提供服务。设计良好的接口是很困难的。一方面，我们希望接口简单明了，因为这样更利于正确使用。另一方面，我们可能倾向于为应用程序提供许多复杂的特性。解决这个问题的诀窍在于设计接口时，依赖一些可结合的机制，以此来提供更好的通用性。</p>
+<p>本书使用单一的操作系统作为具体的例子来说明操作系统的概念。xv6这个操作系统提供了Ken Thompson和Dennis Ritchie的Unix 介绍的基本接口，并且模仿了Unix的内部设计。Unix提供了一个窄接口，其机制表现突出，提供了令人惊讶的通用程度。这个接口非常成功，甚至现代操作系统BSD、Linux、Mac OSX、Solaris，甚至在一定程度上，Microsoft windows都有类Unix的接口。理解xv6是理解这些系统和其他系统的一个良好开端。</p>
+<p>如下图1.1所示，xv6采用传统的内核形式（内核是一个特殊的程序，为正在运行的程序提供服务）。每个正在运行的程序，称为进程，都有包含指令、数据和堆栈的内存。指令实现了程序的运算，数据是计算所依赖的变量，堆栈组织程序的过程调用。一台给定的计算机通常有许多进程，但只有一个内核。</p>
+<p><img src="/../images/c1/p1.png" alt="img"></p>
+<p>当一个进程需要调用一个内核服务时，它会调用一个系统调用，这是操作系统接口中的一个调用。系统调用进入内核；内核执行服务并返回。因此，一个进程在用户空间和内核空间之间交替执行。</p>
+<p>内核使用CPU提供的硬件保护机制来确保每个在用户空间执行的进程只能访问它自己的内存。内核程序的执行拥有操控硬件的权限，它需要实现这些保护；而用户程序执行时没有这些特权。当用户程序调用系统调用时，硬件会提升权限级别，并开始执行内核中预先安排好的函数。</p>
+<p>内核提供的系统调用集合是用户程序看到的接口。Xv6内核提供了Unix内核传统上提供的服务和系统调用的子集。表1.2列出了xv6的所有系统调用。</p>
+<table>
+<thead>
+<tr>
+<th><strong>系统调用</strong></th>
+<th><strong>描述</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>int fork()</code></td>
+<td>创建一个进程，返回子进程的PID</td>
+</tr>
+<tr>
+<td><code>int exit(int status)</code></td>
+<td>终止当前进程，并将状态报告给wait()函数。无返回</td>
+</tr>
+<tr>
+<td><code>int wait(int *status)</code></td>
+<td>等待一个子进程退出; 将退出状态存入*status; 返回子进程PID。</td>
+</tr>
+<tr>
+<td><code>int kill(int pid)</code></td>
+<td>终止对应PID的进程，返回0，或返回-1表示错误</td>
+</tr>
+<tr>
+<td><code>int getpid()</code></td>
+<td>返回当前进程的PID</td>
+</tr>
+<tr>
+<td><code>int sleep(int n)</code></td>
+<td>暂停n个时钟节拍</td>
+</tr>
+<tr>
+<td><code>int exec(char *file, char *argv[])</code></td>
+<td>加载一个文件并使用参数执行它; 只有在出错时才返回</td>
+</tr>
+<tr>
+<td><code>char *sbrk(int n)</code></td>
+<td>按n 字节增长进程的内存。返回新内存的开始</td>
+</tr>
+<tr>
+<td><code>int open(char *file, int flags)</code></td>
+<td>打开一个文件；flags表示read&#x2F;write；返回一个fd（文件描述符）</td>
+</tr>
+<tr>
+<td><code>int write(int fd, char *buf, int n)</code></td>
+<td>从buf 写n 个字节到文件描述符fd; 返回n</td>
+</tr>
+<tr>
+<td><code>int read(int fd, char *buf, int n)</code></td>
+<td>将n 个字节读入buf；返回读取的字节数；如果文件结束，返回0</td>
+</tr>
+<tr>
+<td><code>int close(int fd)</code></td>
+<td>释放打开的文件fd</td>
+</tr>
+<tr>
+<td><code>int dup(int fd)</code></td>
+<td>返回一个新的文件描述符，指向与fd 相同的文件</td>
+</tr>
+<tr>
+<td><code>int pipe(int p[])</code></td>
+<td>创建一个管道，把read&#x2F;write文件描述符放在p[0]和p[1]中</td>
+</tr>
+<tr>
+<td><code>int chdir(char *dir)</code></td>
+<td>改变当前的工作目录</td>
+</tr>
+<tr>
+<td><code>int mkdir(char *dir)</code></td>
+<td>创建一个新目录</td>
+</tr>
+<tr>
+<td><code>int mknod(char *file, int, int)</code></td>
+<td>创建一个设备文件</td>
+</tr>
+<tr>
+<td><code>int fstat(int fd, struct stat *st)</code></td>
+<td>将打开文件fd的信息放入*st</td>
+</tr>
+<tr>
+<td><code>int stat(char *file, struct stat *st)</code></td>
+<td>将指定名称的文件信息放入*st</td>
+</tr>
+<tr>
+<td><code>int link(char *file1, char *file2)</code></td>
+<td>为文件file1创建另一个名称(file2)</td>
+</tr>
+<tr>
+<td><code>int unlink(char *file)</code></td>
+<td>删除一个文件</td>
+</tr>
+</tbody></table>
+<p>​		表1.2：xv6系统调用（除非另外声明，这些系统调用返回0表示无误，返回-1表示出错）</p>
+<hr>
+<p>本章的其余部分概述了xv6的服务——进程、内存、文件描述符、管道和文件系统——并用代码片段和关于shell（Unix的命令行用户界面）如何使用它们的讨论来阐释。Shell对系统调用的使用说明了它们是如何被精心设计的。</p>
+<p>Shell是一个普通的程序，它从用户那里读取命令并执行它们。Shell是一个用户程序，而不是内核的一部分，这一事实说明了系统调用接口的强大之处：shell没有什么特别之处。这也意味着shell很容易替换；因此，现代Unix系统有多种shell可供选择，每种shell都有自己的用户界面和脚本特性。Xv6 Shell是Unix Bourne shell本质的简单实现。它的实现可以在(user&#x2F;sh.c:1)中找到.</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/10/06/tranlate_books/Calling%20Convention/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/10/06/tranlate_books/book-riscv-rev1/summary/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#%E7%AC%AC%E4%B8%80%E7%AB%A0-%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E6%8E%A5%E5%8F%A3"><span class="nav-number">1.</span> <span class="nav-text">第一章 操作系统接口</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">xiaoq</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">xiaoq</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'nPTQNF98hlhFVhx3uT28h3EW-gzGzoHsz',
+      appKey     : 'Hj5CW3nJJnJ3rBlGeKK8XQLa',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

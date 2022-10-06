@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Lab9: file system在本实验室中，您将向xv6文件系统添加大型文件和符号链接。  [!WARNING|label:Attention]在编写代码之前，您应该阅读《xv6手册》中的《第八章：文件系统》，并学习相应的代码。  获取实验室的xv6源代码并切换到fs分支： 123$ git fetch$ git checkout fs$ make clean  Large files(mod">
+<meta property="og:type" content="article">
+<meta property="og:title" content="肖大强的个人博客">
+<meta property="og:url" content="http://example.com/2022/10/06/labs/requirements/lab9/index.html">
+<meta property="og:site_name" content="肖大强的个人博客">
+<meta property="og:description" content="Lab9: file system在本实验室中，您将向xv6文件系统添加大型文件和符号链接。  [!WARNING|label:Attention]在编写代码之前，您应该阅读《xv6手册》中的《第八章：文件系统》，并学习相应的代码。  获取实验室的xv6源代码并切换到fs分支： 123$ git fetch$ git checkout fs$ make clean  Large files(mod">
+<meta property="og:locale">
+<meta property="article:published_time" content="2022-10-06T15:06:31.518Z">
+<meta property="article:modified_time" content="2022-10-06T14:55:44.977Z">
+<meta property="article:author" content="xiaoq">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/10/06/labs/requirements/lab9/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title> | 肖大强的个人博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">肖大强的个人博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/10/06/labs/requirements/lab9/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="xiaoq">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="肖大强的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-10-06 23:06:31 / Modified: 22:55:44" itemprop="dateCreated datePublished" datetime="2022-10-06T23:06:31+08:00">2022-10-06</time>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/10/06/labs/requirements/lab9/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/10/06/labs/requirements/lab9/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Lab9-file-system"><a href="#Lab9-file-system" class="headerlink" title="Lab9: file system"></a>Lab9: file system</h1><p>在本实验室中，您将向xv6文件系统添加大型文件和符号链接。</p>
+<blockquote>
+<p>[!WARNING|label:Attention]<br>在编写代码之前，您应该阅读《xv6手册》中的《第八章：文件系统》，并学习相应的代码。</p>
+</blockquote>
+<p>获取实验室的xv6源代码并切换到fs分支：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ git fetch</span><br><span class="line">$ git checkout fs</span><br><span class="line">$ make clean</span><br></pre></td></tr></table></figure>
+
+<h1 id="Large-files-moderate"><a href="#Large-files-moderate" class="headerlink" title="Large files(moderate)"></a>Large files(moderate)</h1><p>在本作业中，您将增加xv6文件的最大大小。目前，xv6文件限制为268个块或<code>268*BSIZE</code>字节（在xv6中<code>BSIZE</code>为1024）。此限制来自以下事实：一个xv6 inode包含12个“直接”块号和一个“间接”块号，“一级间接”块指一个最多可容纳256个块号的块，总共12+256&#x3D;268个块。</p>
+<p><code>bigfile</code>命令可以创建最长的文件，并报告其大小：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ bigfile</span><br><span class="line">..</span><br><span class="line">wrote 268 blocks</span><br><span class="line">bigfile: file is too small</span><br><span class="line">$</span><br></pre></td></tr></table></figure>
+
+<p>测试失败，因为<code>bigfile</code>希望能够创建一个包含65803个块的文件，但未修改的xv6将文件限制为268个块。</p>
+<p>您将更改xv6文件系统代码，以支持每个inode中可包含256个一级间接块地址的“二级间接”块，每个一级间接块最多可以包含256个数据块地址。结果将是一个文件将能够包含多达65803个块，或256*256+256+11个块（11而不是12，因为我们将为二级间接块牺牲一个直接块号）。</p>
+<h2 id="预备"><a href="#预备" class="headerlink" title="预备"></a>预备</h2><p><code>mkfs</code>程序创建xv6文件系统磁盘映像，并确定文件系统的总块数；此大小由<em><strong>kernel&#x2F;param.h</strong></em>中的<code>FSSIZE</code>控制。您将看到，该实验室存储库中的<code>FSSIZE</code>设置为200000个块。您应该在<code>make</code>输出中看到来自<code>mkfs/mkfs</code>的以下输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br></pre></td><td class="code"><pre><span class="line">nmeta 70 (boot, super, log blocks 30 inode blocks 13, bitmap blocks 25) blocks 199930 total 200000</span><br></pre></td></tr></table></figure>
+
+<p>这一行描述了<code>mkfs/mkfs</code>构建的文件系统：它有70个元数据块（用于描述文件系统的块）和199930个数据块，总计200000个块。</p>
+<p>如果在实验期间的任何时候，您发现自己必须从头开始重建文件系统，您可以运行<code>make clean</code>，强制<code>make</code>重建<em><strong>fs.img</strong></em>。</p>
+<h2 id="看什么"><a href="#看什么" class="headerlink" title="看什么"></a>看什么</h2><p>磁盘索引节点的格式由<em><strong>fs.h</strong></em>中的<code>struct dinode</code>定义。您应当尤其对<code>NDIRECT</code>、<code>NINDIRECT</code>、<code>MAXFILE</code>和<code>struct dinode</code>的<code>addrs[]</code>元素感兴趣。查看《XV6手册》中的图8.3，了解标准xv6索引结点的示意图。</p>
+<p>在磁盘上查找文件数据的代码位于<em><strong>fs.c</strong></em>的<code>bmap()</code>中。看看它，确保你明白它在做什么。在读取和写入文件时都会调用<code>bmap()</code>。写入时，<code>bmap()</code>会根据需要分配新块以保存文件内容，如果需要，还会分配间接块以保存块地址。</p>
+<p><code>bmap()</code>处理两种类型的块编号。<code>bn</code>参数是一个“逻辑块号”——文件中相对于文件开头的块号。<code>ip-&gt;addrs[]</code>中的块号和<code>bread()</code>的参数都是磁盘块号。您可以将<code>bmap()</code>视为将文件的逻辑块号映射到磁盘块号。</p>
+<h2 id="你的工作"><a href="#你的工作" class="headerlink" title="你的工作"></a>你的工作</h2><p>修改<code>bmap()</code>，以便除了直接块和一级间接块之外，它还实现二级间接块。你只需要有11个直接块，而不是12个，为你的新的二级间接块腾出空间；不允许更改磁盘inode的大小。<code>ip-&gt;addrs[]</code>的前11个元素应该是直接块；第12个应该是一个一级间接块（与当前的一样）；13号应该是你的新二级间接块。当<code>bigfile</code>写入65803个块并成功运行<code>usertests</code>时，此练习完成：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br></pre></td><td class="code"><pre><span class="line">$ bigfile</span><br><span class="line">..................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................................</span><br><span class="line">wrote 65803 blocks</span><br><span class="line">done; ok</span><br><span class="line">$ usertests</span><br><span class="line">...</span><br><span class="line">ALL TESTS PASSED</span><br><span class="line">$ </span><br></pre></td></tr></table></figure>
+
+<p>运行<code>bigfile</code>至少需要一分钟半的时间。</p>
+<p><strong>提示：</strong></p>
+<ul>
+<li>确保您理解<code>bmap()</code>。写出<code>ip-&gt;addrs[]</code>、间接块、二级间接块和它所指向的一级间接块以及数据块之间的关系图。确保您理解为什么添加二级间接块会将最大文件大小增加256*256个块（实际上要-1，因为您必须将直接块的数量减少一个）。</li>
+<li>考虑如何使用逻辑块号索引二级间接块及其指向的间接块。</li>
+<li>如果更改<code>NDIRECT</code>的定义，则可能必须更改<em><strong>file.h</strong></em>文件中<code>struct inode</code>中<code>addrs[]</code>的声明。确保<code>struct inode</code>和<code>struct dinode</code>在其<code>addrs[]</code>数组中具有相同数量的元素。</li>
+<li>如果更改<code>NDIRECT</code>的定义，请确保创建一个新的<em><strong>fs.img</strong></em>，因为<code>mkfs</code>使用<code>NDIRECT</code>构建文件系统。</li>
+<li>如果您的文件系统进入坏状态，可能是由于崩溃，请删除<em><strong>fs.img</strong></em>（从Unix而不是xv6执行此操作）。<code>make</code>将为您构建一个新的干净文件系统映像。</li>
+<li>别忘了把你<code>bread()</code>的每一个块都<code>brelse()</code>。</li>
+<li>您应该仅根据需要分配间接块和二级间接块，就像原始的<code>bmap()</code>。</li>
+<li>确保<code>itrunc</code>释放文件的所有块，包括二级间接块。</li>
+</ul>
+<h1 id="Symbolic-links-moderate"><a href="#Symbolic-links-moderate" class="headerlink" title="Symbolic links(moderate)"></a>Symbolic links(moderate)</h1><p>在本练习中，您将向xv6添加符号链接。符号链接（或软链接）是指按路径名链接的文件；当一个符号链接打开时，内核跟随该链接指向引用的文件。符号链接类似于硬链接，但硬链接仅限于指向同一磁盘上的文件，而符号链接可以跨磁盘设备。尽管xv6不支持多个设备，但实现此系统调用是了解路径名查找工作原理的一个很好的练习。</p>
+<h2 id="你的工作-1"><a href="#你的工作-1" class="headerlink" title="你的工作"></a>你的工作</h2><blockquote>
+<p>[!TIP|label:YOUR JOB]<br>您将实现<code>symlink(char *target, char *path)</code>系统调用，该调用在引用由<code>target</code>命名的文件的路径处创建一个新的符号链接。有关更多信息，请参阅<code>symlink</code>手册页（注：执行<code>man symlink</code>）。要进行测试，请将<code>symlinktest</code>添加到<em><strong>Makefile</strong></em>并运行它。当测试产生以下输出（包括<code>usertests</code>运行成功）时，您就完成本作业了。</p>
+</blockquote>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br></pre></td><td class="code"><pre><span class="line">$ symlinktest</span><br><span class="line">Start: <span class="built_in">test</span> symlinks</span><br><span class="line"><span class="built_in">test</span> symlinks: ok</span><br><span class="line">Start: <span class="built_in">test</span> concurrent symlinks</span><br><span class="line"><span class="built_in">test</span> concurrent symlinks: ok</span><br><span class="line">$ usertests</span><br><span class="line">...</span><br><span class="line">ALL TESTS PASSED</span><br><span class="line">$ </span><br></pre></td></tr></table></figure>
+
+<p><strong>提示：</strong></p>
+<ul>
+<li>首先，为<code>symlink</code>创建一个新的系统调用号，在<em><strong>user&#x2F;usys.pl</strong></em>、<em><strong>user&#x2F;user.h</strong></em>中添加一个条目，并在<em><strong>kernel&#x2F;sysfile.c</strong></em>中实现一个空的<code>sys_symlink</code>。</li>
+<li>向<em><strong>kernel&#x2F;stat.h</strong></em>添加新的文件类型（<code>T_SYMLINK</code>）以表示符号链接。</li>
+<li>在k<em><strong>ernel&#x2F;fcntl.h</strong></em>中添加一个新标志（<code>O_NOFOLLOW</code>），该标志可用于<code>open</code>系统调用。请注意，传递给<code>open</code>的标志使用按位或运算符组合，因此新标志不应与任何现有标志重叠。一旦将<em><strong>user&#x2F;symlinktest.c</strong></em>添加到<em><strong>Makefile</strong></em>中，您就可以编译它。</li>
+<li>实现<code>symlink(target, path)</code>系统调用，以在<code>path</code>处创建一个新的指向<code>target</code>的符号链接。请注意，系统调用的成功不需要<code>target</code>已经存在。您需要选择存储符号链接目标路径的位置，例如在inode的数据块中。<code>symlink</code>应返回一个表示成功（0）或失败（-1）的整数，类似于<code>link</code>和<code>unlink</code>。</li>
+<li>修改<code>open</code>系统调用以处理路径指向符号链接的情况。如果文件不存在，则打开必须失败。当进程向<code>open</code>传递<code>O_NOFOLLOW</code>标志时，<code>open</code>应打开符号链接（而不是跟随符号链接）。</li>
+<li>如果链接文件也是符号链接，则必须递归地跟随它，直到到达非链接文件为止。如果链接形成循环，则必须返回错误代码。你可以通过以下方式估算存在循环：通过在链接深度达到某个阈值（例如10）时返回错误代码。</li>
+<li>其他系统调用（如<code>link</code>和<code>unlink</code>）不得跟随符号链接；这些系统调用对符号链接本身进行操作。</li>
+<li>您不必处理指向此实验的目录的符号链接。</li>
+</ul>
+<h1 id="可选的挑战练习"><a href="#可选的挑战练习" class="headerlink" title="可选的挑战练习"></a>可选的挑战练习</h1><p>实现三级间接块</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/10/06/labs/requirements/lab11/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/10/06/labs/requirements/lab7/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Lab9-file-system"><span class="nav-number">1.</span> <span class="nav-text">Lab9: file system</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Large-files-moderate"><span class="nav-number">2.</span> <span class="nav-text">Large files(moderate)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E9%A2%84%E5%A4%87"><span class="nav-number">2.1.</span> <span class="nav-text">预备</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E7%9C%8B%E4%BB%80%E4%B9%88"><span class="nav-number">2.2.</span> <span class="nav-text">看什么</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%A0%E7%9A%84%E5%B7%A5%E4%BD%9C"><span class="nav-number">2.3.</span> <span class="nav-text">你的工作</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Symbolic-links-moderate"><span class="nav-number">3.</span> <span class="nav-text">Symbolic links(moderate)</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E4%BD%A0%E7%9A%84%E5%B7%A5%E4%BD%9C-1"><span class="nav-number">3.1.</span> <span class="nav-text">你的工作</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%AF%E9%80%89%E7%9A%84%E6%8C%91%E6%88%98%E7%BB%83%E4%B9%A0"><span class="nav-number">4.</span> <span class="nav-text">可选的挑战练习</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">xiaoq</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">xiaoq</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'nPTQNF98hlhFVhx3uT28h3EW-gzGzoHsz',
+      appKey     : 'Hj5CW3nJJnJ3rBlGeKK8XQLa',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

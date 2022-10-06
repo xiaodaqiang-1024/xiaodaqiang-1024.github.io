@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="7.8 代码：wait, exit和killSleep和wakeup可用于多种等待。第一章介绍的一个有趣的例子是子进程exit和父进程wait之间的交互。在子进程死亡时，父进程可能已经在wait中休眠，或者正在做其他事情；在后一种情况下，随后的wait调用必须观察到子进程的死亡，可能是在子进程调用exit后很久。xv6记录子进程终止直到wait观察到它的方式是让exit将调用方置于ZOMBIE状态">
+<meta property="og:type" content="article">
+<meta property="og:title" content="肖大强的个人博客">
+<meta property="og:url" content="http://example.com/2022/10/06/tranlate_books/book-riscv-rev1/c7/s8/index.html">
+<meta property="og:site_name" content="肖大强的个人博客">
+<meta property="og:description" content="7.8 代码：wait, exit和killSleep和wakeup可用于多种等待。第一章介绍的一个有趣的例子是子进程exit和父进程wait之间的交互。在子进程死亡时，父进程可能已经在wait中休眠，或者正在做其他事情；在后一种情况下，随后的wait调用必须观察到子进程的死亡，可能是在子进程调用exit后很久。xv6记录子进程终止直到wait观察到它的方式是让exit将调用方置于ZOMBIE状态">
+<meta property="og:locale">
+<meta property="article:published_time" content="2022-10-06T15:06:31.908Z">
+<meta property="article:modified_time" content="2022-10-06T14:55:45.039Z">
+<meta property="article:author" content="xiaoq">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/10/06/tranlate_books/book-riscv-rev1/c7/s8/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title> | 肖大强的个人博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">肖大强的个人博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/10/06/tranlate_books/book-riscv-rev1/c7/s8/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="xiaoq">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="肖大强的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-10-06 23:06:31 / Modified: 22:55:45" itemprop="dateCreated datePublished" datetime="2022-10-06T23:06:31+08:00">2022-10-06</time>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/10/06/tranlate_books/book-riscv-rev1/c7/s8/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/10/06/tranlate_books/book-riscv-rev1/c7/s8/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="7-8-代码：wait-exit和kill"><a href="#7-8-代码：wait-exit和kill" class="headerlink" title="7.8 代码：wait, exit和kill"></a>7.8 代码：wait, exit和kill</h1><p><code>Sleep</code>和<code>wakeup</code>可用于多种等待。第一章介绍的一个有趣的例子是子进程<code>exit</code>和父进程<code>wait</code>之间的交互。在子进程死亡时，父进程可能已经在<code>wait</code>中休眠，或者正在做其他事情；在后一种情况下，随后的<code>wait</code>调用必须观察到子进程的死亡，可能是在子进程调用<code>exit</code>后很久。xv6记录子进程终止直到<code>wait</code>观察到它的方式是让<code>exit</code>将调用方置于<code>ZOMBIE</code>状态，在那里它一直保持到父进程的<code>wait</code>注意到它，将子进程的状态更改为<code>UNUSED</code>，复制子进程的<code>exit</code>状态码，并将子进程ID返回给父进程。如果父进程在子进程之前退出，则父进程将子进程交给<code>init</code>进程，<code>init</code>进程将永久调用<code>wait</code>；因此，每个子进程退出后都有一个父进程进行清理。主要的实现挑战是父级和子级<code>wait</code>和<code>exit</code>，以及<code>exit</code>和<code>exit</code>之间可能存在竞争和死锁。</p>
+<p><code>Wait</code>使用调用进程的<code>p-&gt;lock</code>作为条件锁，以避免丢失唤醒，并在开始时获取该锁（<em><strong>kernel&#x2F;proc.c</strong></em>:398）。然后它扫描进程表。如果它发现一个子进程处于<code>ZOMBIE</code>状态，它将释放该子进程的资源及其<code>proc</code>结构体，将该子进程的退出状态码复制到提供给<code>wait</code>的地址（如果不是0），并返回该子进程的进程ID。如果<code>wait</code>找到子进程但没有子进程退出，它将调用<code>sleep</code>以等待其中一个退出（<em><strong>kernel&#x2F;proc.c</strong></em>:445），然后再次扫描。这里，<code>sleep</code>中释放的条件锁是等待进程的<code>p-&gt;lock</code>，这是上面提到的特例。注意，<code>wait</code>通常持有两个锁：它在试图获得任何子进程的锁之前先获得自己的锁；因此，整个xv6都必须遵守相同的锁定顺序（父级，然后是子级），以避免死锁。</p>
+<p><code>Wait</code>查看每个进程的<code>np-&gt;parent</code>以查找其子进程。它使用<code>np-&gt;parent</code>而不持有<code>np-&gt;lock</code>，这违反了通常的规则，即共享变量必须受到锁的保护。<code>np</code>可能是当前进程的祖先，在这种情况下，获取<code>np-&gt;lock</code>可能会导致死锁，因为这将违反上述顺序。这种情况下无锁检查<code>np-&gt;parent</code>似乎是安全的：进程的<code>parent</code>字段仅由其父进程更改，因此如果<code>np-&gt;parent==p</code>为<code>true</code>，除非当前流程更改它，否则该值无法被更改，</p>
+<p><code>Exit</code>（<em><strong>kernel&#x2F;proc.c</strong></em>:333）记录退出状态码，释放一些资源，将所有子进程提供给<code>init</code>进程，在父进程处于等待状态时唤醒父进程，将调用方标记为僵尸进程（zombie），并永久地让出CPU。最后的顺序有点棘手。退出进程必须在将其状态设置为<code>ZOMBIE</code>并唤醒父进程时持有其父进程的锁，因为父进程的锁是防止在<code>wait</code>中丢失唤醒的条件锁。子级还必须持有自己的<code>p-&gt;lock</code>，否则父级可能会看到它处于<code>ZOMBIE</code>状态，并在它仍运行时释放它。锁获取顺序对于避免死锁很重要：因为<code>wait</code>先获取父锁再获取子锁，所以<code>exit</code>必须使用相同的顺序。</p>
+<p><code>Exit</code>调用一个专门的唤醒函数<code>wakeup1</code>，该函数仅唤醒父进程，且父进程必须正在<code>wait</code>中休眠（<em><strong>kernel&#x2F;proc.c</strong></em>:598）。在将自身状态设置为<code>ZOMBIE</code>之前，子进程唤醒父进程可能看起来不正确，但这是安全的：虽然<code>wakeup1</code>可能会导致父进程运行，但<code>wait</code>中的循环在<code>scheduler</code>释放子进程的<code>p-&gt;lock</code>之前无法检查子进程，所以<code>wait</code>在<code>exit</code>将其状态设置为<code>ZOMBIE</code>（kernel&#x2F;proc.c:386）之前不能查看退出进程。</p>
+<p><code>exit</code>允许进程自行终止，而<code>kill</code>（<em><strong>kernel&#x2F;proc.c</strong></em>:611）允许一个进程请求另一个进程终止。对于<code>kill</code>来说，直接销毁受害者进程（即要杀死的进程）太复杂了，因为受害者可能在另一个CPU上执行，也许是在更新内核数据结构的敏感序列中间。因此，<code>kill</code>的工作量很小：它只是设置受害者的<code>p-&gt;killed</code>，如果它正在睡眠，则唤醒它。受害者进程终将进入或离开内核，此时，如果设置了<code>p-&gt;killed</code>，<code>usertrap</code>中的代码将调用<code>exit</code>。如果受害者在用户空间中运行，它将很快通过进行系统调用或由于计时器（或其他设备）中断而进入内核。</p>
+<p>如果受害者进程在<code>sleep</code>中，<code>kill</code>对<code>wakeup</code>的调用将导致受害者从<code>sleep</code>中返回。这存在潜在的危险，因为等待的条件可能不为真。但是，xv6对<code>sleep</code>的调用总是封装在<code>while</code>循环中，该循环在<code>sleep</code>返回后重新测试条件。一些对<code>sleep</code>的调用还在循环中测试<code>p-&gt;killed</code>，如果它被设置，则放弃当前活动。只有在这种放弃是正确的情况下才能这样做。例如，如果设置了<code>killed</code>标志，则管道读写代码返回；最终代码将返回到陷阱，陷阱将再次检查标志并退出。</p>
+<p>一些XV6的<code>sleep</code>循环不检查<code>p-&gt;killed</code>，因为代码在应该是原子操作的多步系统调用的中间。virtio驱动程序（<em><strong>kernel&#x2F;virtio_disk.c</strong></em>:242）就是一个例子：它不检查<code>p-&gt;killed</code>，因为一个磁盘操作可能是文件系统保持正确状态所需的一组写入操作之一。等待磁盘I&#x2F;O时被杀死的进程将不会退出，直到它完成当前系统调用并且<code>usertrap</code>看到<code>killed</code>标志</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/10/06/tranlate_books/book-riscv-rev1/c7/s7/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/10/06/tranlate_books/book-riscv-rev1/c7/s6/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#7-8-%E4%BB%A3%E7%A0%81%EF%BC%9Await-exit%E5%92%8Ckill"><span class="nav-number">1.</span> <span class="nav-text">7.8 代码：wait, exit和kill</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">xiaoq</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">xiaoq</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'nPTQNF98hlhFVhx3uT28h3EW-gzGzoHsz',
+      appKey     : 'Hj5CW3nJJnJ3rBlGeKK8XQLa',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

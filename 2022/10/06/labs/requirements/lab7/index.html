@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Lab7: Multithreading本实验将使您熟悉多线程。您将在用户级线程包中实现线程之间的切换，使用多个线程来加速程序，并实现一个屏障。  [!WARNING|label:Attention]在编写代码之前，您应该确保已经阅读了xv6手册中的“第7章: 调度”，并研究了相应的代码。  要启动实验，请切换到thread分支： 123$ git fetch$ git checkout thre">
+<meta property="og:type" content="article">
+<meta property="og:title" content="肖大强的个人博客">
+<meta property="og:url" content="http://example.com/2022/10/06/labs/requirements/lab7/index.html">
+<meta property="og:site_name" content="肖大强的个人博客">
+<meta property="og:description" content="Lab7: Multithreading本实验将使您熟悉多线程。您将在用户级线程包中实现线程之间的切换，使用多个线程来加速程序，并实现一个屏障。  [!WARNING|label:Attention]在编写代码之前，您应该确保已经阅读了xv6手册中的“第7章: 调度”，并研究了相应的代码。  要启动实验，请切换到thread分支： 123$ git fetch$ git checkout thre">
+<meta property="og:locale">
+<meta property="article:published_time" content="2022-10-06T15:06:31.518Z">
+<meta property="article:modified_time" content="2022-10-06T14:55:44.977Z">
+<meta property="article:author" content="xiaoq">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/10/06/labs/requirements/lab7/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title> | 肖大强的个人博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">肖大强的个人博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/10/06/labs/requirements/lab7/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="xiaoq">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="肖大强的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-10-06 23:06:31 / Modified: 22:55:44" itemprop="dateCreated datePublished" datetime="2022-10-06T23:06:31+08:00">2022-10-06</time>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/10/06/labs/requirements/lab7/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/10/06/labs/requirements/lab7/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Lab7-Multithreading"><a href="#Lab7-Multithreading" class="headerlink" title="Lab7: Multithreading"></a>Lab7: Multithreading</h1><p>本实验将使您熟悉多线程。您将在用户级线程包中实现线程之间的切换，使用多个线程来加速程序，并实现一个屏障。</p>
+<blockquote>
+<p>[!WARNING|label:Attention]<br>在编写代码之前，您应该确保已经阅读了xv6手册中的“第7章: 调度”，并研究了相应的代码。</p>
+</blockquote>
+<p>要启动实验，请切换到thread分支：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ git fetch</span><br><span class="line">$ git checkout thread</span><br><span class="line">$ make clean</span><br></pre></td></tr></table></figure>
+
+<h1 id="Uthread-switching-between-threads-moderate"><a href="#Uthread-switching-between-threads-moderate" class="headerlink" title="Uthread: switching between threads (moderate)"></a>Uthread: switching between threads (moderate)</h1><p>在本练习中，您将为用户级线程系统设计上下文切换机制，然后实现它。为了让您开始，您的xv6有两个文件：<em><strong>user&#x2F;uthread.c</strong></em>和<em><strong>user&#x2F;uthread_switch.S</strong></em>，以及一个规则：运行在<em><strong>Makefile</strong></em>中以构建<code>uthread</code>程序。<em><strong>uthread.c</strong></em>包含大多数用户级线程包，以及三个简单测试线程的代码。线程包缺少一些用于创建线程和在线程之间切换的代码。</p>
+<blockquote>
+<p>[!TIP|label:YOUR JOB]<br>您的工作是提出一个创建线程和保存&#x2F;恢复寄存器以在线程之间切换的计划，并实现该计划。完成后，<code>make grade</code>应该表明您的解决方案通过了<code>uthread</code>测试。</p>
+</blockquote>
+<p>完成后，在xv6上运行<code>uthread</code>时应该会看到以下输出（三个线程可能以不同的顺序启动）：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br></pre></td><td class="code"><pre><span class="line">$ make qemu</span><br><span class="line">...</span><br><span class="line">$ uthread</span><br><span class="line">thread_a started</span><br><span class="line">thread_b started</span><br><span class="line">thread_c started</span><br><span class="line">thread_c 0</span><br><span class="line">thread_a 0</span><br><span class="line">thread_b 0</span><br><span class="line">thread_c 1</span><br><span class="line">thread_a 1</span><br><span class="line">thread_b 1</span><br><span class="line">...</span><br><span class="line">thread_c 99</span><br><span class="line">thread_a 99</span><br><span class="line">thread_b 99</span><br><span class="line">thread_c: <span class="built_in">exit</span> after 100</span><br><span class="line">thread_a: <span class="built_in">exit</span> after 100</span><br><span class="line">thread_b: <span class="built_in">exit</span> after 100</span><br><span class="line">thread_schedule: no runnable threads</span><br><span class="line">$</span><br></pre></td></tr></table></figure>
+
+<p>该输出来自三个测试线程，每个线程都有一个循环，该循环打印一行，然后将CPU让出给其他线程。</p>
+<p>然而在此时还没有上下文切换的代码，您将看不到任何输出。</p>
+<p>您需要将代码添加到<em><strong>user&#x2F;uthread.c</strong></em>中的<code>thread_create()</code>和<code>thread_schedule()</code>，以及<em><strong>user&#x2F;uthread_switch.S</strong></em>中的<code>thread_switch</code>。一个目标是确保当<code>thread_schedule()</code>第一次运行给定线程时，该线程在自己的栈上执行传递给<code>thread_create()</code>的函数。另一个目标是确保<code>thread_switch</code>保存被切换线程的寄存器，恢复切换到线程的寄存器，并返回到后一个线程指令中最后停止的点。您必须决定保存&#x2F;恢复寄存器的位置；修改<code>struct thread</code>以保存寄存器是一个很好的计划。您需要在<code>thread_schedule</code>中添加对<code>thread_switch</code>的调用；您可以将需要的任何参数传递给<code>thread_switch</code>，但目的是将线程从<code>t</code>切换到<code>next_thread</code>。</p>
+<p><strong>提示：</strong></p>
+<ul>
+<li><code>thread_switch</code>只需要保存&#x2F;还原被调用方保存的寄存器（callee-save register，参见LEC5使用的文档《Calling Convention》）。为什么？</li>
+<li>您可以在<em><strong>user&#x2F;uthread.asm</strong></em>中看到<code>uthread</code>的汇编代码，这对于调试可能很方便。</li>
+<li>这可能对于测试你的代码很有用，使用<code>riscv64-linux-gnu-gdb</code>的单步调试通过你的<code>thread_switch</code>，你可以按这种方法开始：</li>
+</ul>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">(gdb) file user/_uthread</span><br><span class="line">Reading symbols from user/_uthread...</span><br><span class="line">(gdb) b uthread.c:60</span><br></pre></td></tr></table></figure>
+
+<p>这将在<em><strong>uthread.c</strong></em>的第60行设置断点。断点可能会（也可能不会）在运行<code>uthread</code>之前触发。为什么会出现这种情况？</p>
+<p>一旦您的xv6 shell运行，键入“<code>uthread</code>”，gdb将在第60行停止。现在您可以键入如下命令来检查<code>uthread</code>的状态：</p>
+<p><code>(gdb) p/x *next_thread</code></p>
+<p>使用“<code>x</code>”，您可以检查内存位置的内容：</p>
+<p><code>(gdb) x/x next_thread-&gt;stack</code></p>
+<p>您可以跳到<code>thread_switch</code> 的开头，如下：</p>
+<p><code>(gdb) b thread_switch</code></p>
+<p><code>(gdb) c</code></p>
+<p>您可以使用以下方法单步执行汇编指令：</p>
+<p><code>(gdb) si</code></p>
+<p>gdb的在线文档在<a target="_blank" rel="noopener" href="https://sourceware.org/gdb/current/onlinedocs/gdb/">这里</a>。</p>
+<h1 id="Using-threads-moderate"><a href="#Using-threads-moderate" class="headerlink" title="Using threads (moderate)"></a>Using threads (moderate)</h1><p>在本作业中，您将探索使用哈希表的线程和锁的并行编程。您应该在具有多个内核的真实Linux或MacOS计算机（不是xv6，不是qemu）上执行此任务。最新的笔记本电脑都有多核处理器。</p>
+<p>这个作业使用UNIX的pthread线程库。您可以使用<code>man pthreads</code>在手册页面上找到关于它的信息，您可以在web上查看，例如<a target="_blank" rel="noopener" href="https://pubs.opengroup.org/onlinepubs/007908799/xsh/pthread_mutex_lock.html">这里</a>、<a target="_blank" rel="noopener" href="https://pubs.opengroup.org/onlinepubs/007908799/xsh/pthread_mutex_init.html">这里</a>和<a target="_blank" rel="noopener" href="https://pubs.opengroup.org/onlinepubs/007908799/xsh/pthread_create.html">这里</a>。</p>
+<p>文件<em><strong>notxv6&#x2F;ph.c</strong></em>包含一个简单的哈希表，如果单个线程使用，该哈希表是正确的，但是多个线程使用时，该哈希表是不正确的。在您的xv6主目录（可能是<code>~/xv6-labs-2020</code>）中，键入以下内容：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">$ make ph</span><br><span class="line">$ ./ph 1</span><br></pre></td></tr></table></figure>
+
+<p>请注意，要构建<code>ph</code>，<em><strong>Makefile</strong></em>使用操作系统的gcc，而不是6.S081的工具。<code>ph</code>的参数指定在哈希表上执行<code>put</code>和<code>get</code>操作的线程数。运行一段时间后，<code>ph 1</code>将产生与以下类似的输出：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">100000 puts, 3.991 seconds, 25056 puts/second</span><br><span class="line">0: 0 keys missing</span><br><span class="line">100000 gets, 3.981 seconds, 25118 gets/second</span><br></pre></td></tr></table></figure>
+
+<p>您看到的数字可能与此示例输出的数字相差两倍或更多，这取决于您计算机的速度、是否有多个核心以及是否正在忙于做其他事情。</p>
+<p><code>ph</code>运行两个基准程序。首先，它通过调用<code>put()</code>将许多键添加到哈希表中，并以每秒为单位打印puts的接收速率。之后它使用<code>get()</code>从哈希表中获取键。它打印由于puts而应该在哈希表中但丢失的键的数量（在本例中为0），并以每秒为单位打印gets的接收数量。</p>
+<p>通过给<code>ph</code>一个大于1的参数，可以告诉它同时从多个线程使用其哈希表。试试<code>ph 2</code>：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br></pre></td><td class="code"><pre><span class="line">$ ./ph 2</span><br><span class="line">100000 puts, 1.885 seconds, 53044 puts/second</span><br><span class="line">1: 16579 keys missing</span><br><span class="line">0: 16579 keys missing</span><br><span class="line">200000 gets, 4.322 seconds, 46274 gets/second</span><br></pre></td></tr></table></figure>
+
+<p>这个<code>ph 2</code>输出的第一行表明，当两个线程同时向哈希表添加条目时，它们达到每秒53044次插入的总速率。这大约是运行<code>ph 1</code>的单线程速度的两倍。这是一个优秀的“并行加速”，大约达到了人们希望的2倍（即两倍数量的核心每单位时间产出两倍的工作）。</p>
+<p>然而，声明<code>16579 keys missing</code>的两行表示散列表中本应存在的大量键不存在。也就是说，puts应该将这些键添加到哈希表中，但出现了一些问题。请看一下<em><strong>notxv6&#x2F;ph.c</strong></em>，特别是<code>put()</code>和<code>insert()</code>。</p>
+<blockquote>
+<p>[!TIP|label:YOUR JOB]<br>为什么两个线程都丢失了键，而不是一个线程？确定可能导致键丢失的具有2个线程的事件序列。在<em><strong>answers-thread.txt</strong></em>中提交您的序列和简短解释。</p>
+</blockquote>
+<blockquote>
+<p>[!TIP]<br>为了避免这种事件序列，请在<em><strong>notxv6&#x2F;ph.c</strong></em>中的<code>put</code>和<code>get</code>中插入<code>lock</code>和<code>unlock</code>语句，以便在两个线程中丢失的键数始终为0。相关的pthread调用包括：</p>
+<ul>
+<li><code>pthread_mutex_t lock;            // declare a lock</code></li>
+<li><code>pthread_mutex_init(&amp;lock, NULL); // initialize the lock</code></li>
+<li><code>pthread_mutex_lock(&amp;lock);       // acquire lock</code></li>
+<li><code>pthread_mutex_unlock(&amp;lock);     // release lock</code></li>
+</ul>
+<p>当<code>make grade</code>说您的代码通过<code>ph_safe</code>测试时，您就完成了，该测试需要两个线程的键缺失数为0。在此时，<code>ph_fast</code>测试失败是正常的。</p>
+</blockquote>
+<p>不要忘记调用<code>pthread_mutex_init()</code>。首先用1个线程测试代码，然后用2个线程测试代码。您主要需要测试：程序运行是否正确呢（即，您是否消除了丢失的键？）？与单线程版本相比，双线程版本是否实现了并行加速（即单位时间内的工作量更多）？</p>
+<p>在某些情况下，并发<code>put()</code>在哈希表中读取或写入的内存中没有重叠，因此不需要锁来相互保护。您能否更改<em><strong>ph.c</strong></em>以利用这种情况为某些<code>put()</code>获得并行加速？提示：每个散列桶加一个锁怎么样？</p>
+<blockquote>
+<p>[!TIP|label:YOUR JOB]<br>修改代码，使某些<code>put</code>操作在保持正确性的同时并行运行。当<code>make grade</code>说你的代码通过了<code>ph_safe</code>和<code>ph_fast</code>测试时，你就完成了。<code>ph_fast</code>测试要求两个线程每秒产生的<code>put</code>数至少是一个线程的1.25倍。</p>
+</blockquote>
+<h1 id="Barrier-moderate"><a href="#Barrier-moderate" class="headerlink" title="Barrier(moderate)"></a>Barrier(moderate)</h1><p>在本作业中，您将实现一个<a target="_blank" rel="noopener" href="http://en.wikipedia.org/wiki/Barrier_(computer_science)">屏障</a>（Barrier）：应用程序中的一个点，所有参与的线程在此点上必须等待，直到所有其他参与线程也达到该点。您将使用pthread条件变量，这是一种序列协调技术，类似于xv6的<code>sleep</code>和<code>wakeup</code>。</p>
+<p>您应该在真正的计算机（不是xv6，不是qemu）上完成此任务。</p>
+<p>文件<em><strong>notxv6&#x2F;barrier.c</strong></em>包含一个残缺的屏障实现。</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ make barrier</span><br><span class="line">$ ./barrier 2</span><br><span class="line">barrier: notxv6/barrier.c:42: thread: Assertion `i == t<span class="string">&#x27; failed.</span></span><br></pre></td></tr></table></figure>
+
+<p>2指定在屏障上同步的线程数（<em><strong>barrier.c</strong></em>中的<code>nthread</code>）。每个线程执行一个循环。在每次循环迭代中，线程都会调用<code>barrier()</code>，然后以随机微秒数休眠。如果一个线程在另一个线程到达屏障之前离开屏障将触发断言（assert）。期望的行为是每个线程在<code>barrier()</code>中阻塞，直到<code>nthreads</code>的所有线程都调用了<code>barrier()</code>。</p>
+<blockquote>
+<p>[!TIP|label:YOUR JOB]<br>您的目标是实现期望的屏障行为。除了在<code>ph</code>作业中看到的lock原语外，还需要以下新的pthread原语；详情请看<a target="_blank" rel="noopener" href="https://pubs.opengroup.org/onlinepubs/007908799/xsh/pthread_cond_wait.html">这里</a>和<a target="_blank" rel="noopener" href="https://pubs.opengroup.org/onlinepubs/007908799/xsh/pthread_cond_broadcast.html">这里</a>。</p>
+<ul>
+<li><code>// 在cond上进入睡眠，释放锁mutex，在醒来时重新获取</code></li>
+<li><code>pthread_cond_wait(&amp;cond, &amp;mutex);</code></li>
+<li><code>// 唤醒睡在cond的所有线程</code></li>
+<li><code>pthread_cond_broadcast(&amp;cond);</code></li>
+</ul>
+</blockquote>
+<p>确保您的方案通过<code>make grade</code>的<code>barrier</code>测试。</p>
+<p><code>pthread_cond_wait</code>在调用时释放<code>mutex</code>，并在返回前重新获取<code>mutex</code>。</p>
+<p>我们已经为您提供了<code>barrier_init()</code>。您的工作是实现<code>barrier()</code>，这样panic就不会发生。我们为您定义了<code>struct barrier</code>；它的字段供您使用。</p>
+<p><strong>有两个问题使您的任务变得复杂：</strong></p>
+<ul>
+<li>你必须处理一系列的<code>barrier</code>调用，我们称每一连串的调用为一轮（round）。<code>bstate.round</code>记录当前轮数。每次当所有线程都到达屏障时，都应增加<code>bstate.round</code>。</li>
+<li>您必须处理这样的情况：一个线程在其他线程退出<code>barrier</code>之前进入了下一轮循环。特别是，您在前后两轮中重复使用<code>bstate.nthread</code>变量。确保在前一轮仍在使用<code>bstate.nthread</code>时，离开<code>barrier</code>并循环运行的线程不会增加<code>bstate.nthread</code>。</li>
+</ul>
+<p>使用一个、两个和两个以上的线程测试代码。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/10/06/labs/requirements/lab9/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/10/06/labs/requirements/lab6/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Lab7-Multithreading"><span class="nav-number">1.</span> <span class="nav-text">Lab7: Multithreading</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Uthread-switching-between-threads-moderate"><span class="nav-number">2.</span> <span class="nav-text">Uthread: switching between threads (moderate)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Using-threads-moderate"><span class="nav-number">3.</span> <span class="nav-text">Using threads (moderate)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Barrier-moderate"><span class="nav-number">4.</span> <span class="nav-text">Barrier(moderate)</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">xiaoq</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">xiaoq</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'nPTQNF98hlhFVhx3uT28h3EW-gzGzoHsz',
+      appKey     : 'Hj5CW3nJJnJ3rBlGeKK8XQLa',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

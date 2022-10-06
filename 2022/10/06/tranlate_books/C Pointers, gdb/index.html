@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="C, Pointers, gdb我的第一个内存bug C语言中的内存 静态内存   全局变量，可在整个程序中访问 使用static关键字定义，和在全局范围中定义的变量一样。   栈内存   函数中的局部变量。函数退出后自动销毁。   堆内存   您使用malloc()和free()控制这些变量的创建和销毁 由于使用结束后必须调用free()，可能会导致内存泄漏  C语言指针指针是一个64位整数，其">
+<meta property="og:type" content="article">
+<meta property="og:title" content="肖大强的个人博客">
+<meta property="og:url" content="http://example.com/2022/10/06/tranlate_books/C%20Pointers,%20gdb/index.html">
+<meta property="og:site_name" content="肖大强的个人博客">
+<meta property="og:description" content="C, Pointers, gdb我的第一个内存bug C语言中的内存 静态内存   全局变量，可在整个程序中访问 使用static关键字定义，和在全局范围中定义的变量一样。   栈内存   函数中的局部变量。函数退出后自动销毁。   堆内存   您使用malloc()和free()控制这些变量的创建和销毁 由于使用结束后必须调用free()，可能会导致内存泄漏  C语言指针指针是一个64位整数，其">
+<meta property="og:locale">
+<meta property="og:image" content="http://example.com/images/p1.png">
+<meta property="article:published_time" content="2022-10-06T15:06:31.580Z">
+<meta property="article:modified_time" content="2022-10-06T14:55:44.992Z">
+<meta property="article:author" content="xiaoq">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://example.com/images/p1.png">
+
+<link rel="canonical" href="http://example.com/2022/10/06/tranlate_books/C%20Pointers,%20gdb/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title> | 肖大强的个人博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">肖大强的个人博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/10/06/tranlate_books/C%20Pointers,%20gdb/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="xiaoq">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="肖大强的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-10-06 23:06:31 / Modified: 22:55:44" itemprop="dateCreated datePublished" datetime="2022-10-06T23:06:31+08:00">2022-10-06</time>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/10/06/tranlate_books/C%20Pointers,%20gdb/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/10/06/tranlate_books/C%20Pointers,%20gdb/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="C-Pointers-gdb"><a href="#C-Pointers-gdb" class="headerlink" title="C, Pointers, gdb"></a>C, Pointers, gdb</h1><h1 id="我的第一个内存bug"><a href="#我的第一个内存bug" class="headerlink" title="我的第一个内存bug"></a>我的第一个内存bug</h1><p><img src="/images/p1.png" alt="img"></p>
+<h1 id="C语言中的内存"><a href="#C语言中的内存" class="headerlink" title="C语言中的内存"></a>C语言中的内存</h1><ol>
+<li><strong>静态内存</strong></li>
+</ol>
+<ul>
+<li>全局变量，可在整个程序中访问</li>
+<li>使用<code>static</code>关键字定义，和在全局范围中定义的变量一样。</li>
+</ul>
+<ol>
+<li><strong>栈内存</strong></li>
+</ol>
+<ul>
+<li>函数中的局部变量。函数退出后<strong>自动销毁</strong>。</li>
+</ul>
+<ol>
+<li><strong>堆内存</strong></li>
+</ol>
+<ul>
+<li>您使用<code>malloc()</code>和<code>free()</code>控制这些变量的创建和销毁</li>
+<li>由于使用结束后必须调用<code>free()</code>，可能会导致内存泄漏</li>
+</ul>
+<h1 id="C语言指针"><a href="#C语言指针" class="headerlink" title="C语言指针"></a>C语言指针</h1><p>指针是一个64位整数，其值是内存中的地址。</p>
+<p>每个变量都有一个地址，所以每个变量都会有对应的指针，包括指向指针的指针，指向指针的指针的指针，以此类推。</p>
+<p>指针可以处理<code>++</code>, <code>--</code>, <code>+</code>,<code>-</code>这样的算数运算</p>
+<h2 id="指针语法"><a href="#指针语法" class="headerlink" title="指针语法"></a>指针语法</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">int</span> x = <span class="number">5</span>; </span><br><span class="line"><span class="type">int</span> *x_addr = &amp;x;      <span class="comment">//等同于int* x_addr = &amp;x; 例如值为0x7ffd2766a948 </span></span><br><span class="line">*x_addr = <span class="number">6</span>;           <span class="comment">//可以使用*运算符访问基础值 </span></span><br><span class="line"><span class="type">int</span> x_value = *x_addr; <span class="comment">//解引用，这将得到6 </span></span><br><span class="line"><span class="type">int</span> arr1[<span class="number">10</span>];          <span class="comment">//数组隐含了指针！稍后将详细介绍。 </span></span><br><span class="line"><span class="type">int</span> *arr2[<span class="number">20</span>];         <span class="comment">//指针数组，使arr2成为指向指针的指针 </span></span><br><span class="line"><span class="type">void</span> *myPtr;</span><br></pre></td></tr></table></figure>
+
+<p>试试这些！在***user&#x2F;***下创建一个新的程序，就像在Util中一样</p>
+<h2 id="回到内存"><a href="#回到内存" class="headerlink" title="回到内存"></a>回到内存</h2><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">char</span> *<span class="title function_">makeABC</span><span class="params">()</span> &#123; </span><br><span class="line">    <span class="type">char</span> y[<span class="number">3</span>] = &#123;<span class="string">&#x27;a&#x27;</span>, <span class="string">&#x27;b&#x27;</span>, <span class="string">&#x27;c&#x27;</span>&#125;; </span><br><span class="line">    <span class="keyword">return</span> y; </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<p>这有什么错误？</p>
+<h2 id="指针算术运算，耶！"><a href="#指针算术运算，耶！" class="headerlink" title="指针算术运算，耶！"></a>指针算术运算，耶！</h2><p>假设我们有一些值为<code>0x100002</code>的<code>char *c</code>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">c++;    <span class="comment">// 0x100003</span></span><br><span class="line">c += <span class="number">4</span>; <span class="comment">// 0x100007</span></span><br></pre></td></tr></table></figure>
+
+<p>就该如此啊！</p>
+<h2 id="指针算术运算，唉…"><a href="#指针算术运算，唉…" class="headerlink" title="指针算术运算，唉…"></a>指针算术运算，唉…</h2><p>假设我们有一些值为<code>0x100002</code>的<code>int *i</code>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line">i++;    <span class="comment">//0x100006</span></span><br><span class="line">i += <span class="number">4</span>; <span class="comment">//0x100016</span></span><br></pre></td></tr></table></figure>
+
+<p>指针以基本数据类型的长度（以字节为单位）进行加减。</p>
+<h1 id="C语言数组"><a href="#C语言数组" class="headerlink" title="C语言数组"></a>C语言数组</h1><p>C数组是存储特定数据类型的连续内存块。变量实际就是数组起始位置的指针。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">char</span> myString[<span class="number">40</span>];                 <span class="comment">// myString的类型是char* </span></span><br><span class="line"><span class="type">char</span> *myArrayOfStrings[<span class="number">20</span>];        <span class="comment">// myArrayOfStrings的类型是char** </span></span><br><span class="line"><span class="type">int</span> counting[<span class="number">5</span>] = &#123;<span class="number">1</span>, <span class="number">2</span>, <span class="number">3</span>, <span class="number">4</span>, <span class="number">5</span>&#125;; <span class="comment">// counting类型为int*</span></span><br></pre></td></tr></table></figure>
+
+<p>括号运算符<code>[]</code>（例如访问<code>arr[1]</code>）只是指针算法的语法糖。</p>
+<p>假设我们定义了<code>int arr[4] = &#123;5, 6, 7, 8&#125;;</code>那么下面这些是等价的：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">arr[<span class="number">2</span>] = <span class="number">50</span>; </span><br><span class="line">*(arr + <span class="number">2</span>) = <span class="number">50</span>; <span class="comment">// 记住指针的算术运算！ </span></span><br><span class="line"><span class="number">2</span> [arr] = <span class="number">50</span>;    <span class="comment">// 加法是交换的(排列次序不影响结果)!</span></span><br></pre></td></tr></table></figure>
+
+<h2 id="C语言数组的缺陷"><a href="#C语言数组的缺陷" class="headerlink" title="C语言数组的缺陷"></a>C语言数组的缺陷</h2><p>我们可以通过越界访问数组来访问或修改非法内存。C不提供任何检查。</p>
+<p>这种行为可能是意想不到的。</p>
+<p>需要时使用您的size变量！</p>
+<h1 id="C语言的位运算符"><a href="#C语言的位运算符" class="headerlink" title="C语言的位运算符"></a>C语言的位运算符</h1><p>一切最终都是比特位，C语言允许我们操纵这些比特。</p>
+<p>以下均为二进制数：</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">&amp; (and/与): 10001 &amp; 10000 -&gt; 10000</span><br><span class="line">| (or/或): 10001 | 10000 -&gt; 10001</span><br><span class="line">^ (xor/异或): 10001 ^ 10000 -&gt; 00001</span><br><span class="line">~ (complement/取反): ~10000 -&gt; 01111</span><br><span class="line">&lt;&lt; (left shift/左移): 1 &lt;&lt; 4 -&gt; 10000 (binary) -&gt; 16 (decimal) </span><br><span class="line">&gt;&gt; (right shfit/右移): 10101 &gt;&gt; 3 -&gt; 10 (binary) </span><br></pre></td></tr></table></figure>
+
+<p>我们可以将这些运算符组合起来，使标志设置变得简单：</p>
+<p>定义位偏移<code>flag0 = 0</code>, <code>flag1 =1</code>, <code>flag2 = 2</code>.</p>
+<p>要设置标志<code>flag0</code>和<code>flag2</code>：</p>
+<p><code>flags = (1 &lt;&lt; flag0) | (1 &lt;&lt; flag2)</code> -&gt; 101</p>
+<p>要检查在整型标志变量中标志是否被设置：</p>
+<p><code>if(flags &amp; flag1)</code> -&gt; 101 &amp; 010 &#x3D;&#x3D; 0 (false!)</p>
+<h1 id="C语言类型转换"><a href="#C语言类型转换" class="headerlink" title="C语言类型转换"></a>C语言类型转换</h1><p>在C语言中进行类型转换的语法是：<code>(newType)variable</code></p>
+<p>将<code>void*</code>转换为<code>char*</code>: <code>(char*)myVoidPtr</code></p>
+<p>从表达式转换为<code>uint64</code>：<code>(uint64)(2 + 3)</code>, <code>(uint64)myVoidPtr</code></p>
+<p>关于一些好的例子，请参见<em><strong>kalloc.c</strong></em>和<em><strong>vm.c</strong></em>。</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">extern</span> <span class="type">char</span> end[]; <span class="comment">// first address after kernel.</span></span><br><span class="line"><span class="type">void</span> <span class="title function_">kfree</span><span class="params">(<span class="type">void</span> *pa)</span> &#123; </span><br><span class="line">    <span class="class"><span class="keyword">struct</span> <span class="title">run</span> *<span class="title">r</span>;</span> </span><br><span class="line">    <span class="keyword">if</span> (((uint64)pa % PGSIZE) != <span class="number">0</span> || (<span class="type">char</span> *)pa &lt; end || (uint64)pa &gt;= PHYSTOP) </span><br><span class="line">        panic(<span class="string">&quot;kfree&quot;</span>); </span><br><span class="line">    ... </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+
+<h1 id="C语言的-include"><a href="#C语言的-include" class="headerlink" title="C语言的#include"></a>C语言的#include</h1><p><code>.h</code>文件包含声明（构成）</p>
+<p><code>.c</code>文件包含定义（实现）</p>
+<p>基本上从不<code>#include</code> <code>.c</code>类型的文件！</p>
+<p>[include卫兵](<a target="_blank" rel="noopener" href="https://en.wikipedia.org/wiki/Include_guard#:~:text=In">https://en.wikipedia.org/wiki/Include_guard#:~:text=In</a> the C and C,dealing with the include directive.)帮助处理嵌套&#x2F;重复<code>#include</code>（在xv6中没有使用太多）</p>
+<blockquote>
+<p>[!NOTE]<br>include卫兵是指这样的结构</p>
+<p><code>#ifndef XXXX_H</code></p>
+<p><code>#define XXXX_H</code></p>
+<p><code>...</code></p>
+<p><code>#endif</code></p>
+</blockquote>
+<p>使用<code>extern</code>关键字！将函数的可见性扩展到程序中的所有文件。</p>
+<h1 id="一个关于指针的示例"><a href="#一个关于指针的示例" class="headerlink" title="一个关于指针的示例"></a>一个关于指针的示例</h1><figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br><span class="line">31</span><br><span class="line">32</span><br><span class="line">33</span><br><span class="line">34</span><br><span class="line">35</span><br><span class="line">36</span><br><span class="line">37</span><br><span class="line">38</span><br><span class="line">39</span><br><span class="line">40</span><br><span class="line">41</span><br><span class="line">42</span><br><span class="line">43</span><br><span class="line">44</span><br><span class="line">45</span><br><span class="line">46</span><br><span class="line">47</span><br></pre></td><td class="code"><pre><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdio.h&gt;</span></span></span><br><span class="line"><span class="meta">#<span class="keyword">include</span> <span class="string">&lt;stdlib.h&gt;</span></span></span><br><span class="line"></span><br><span class="line"><span class="type">void</span></span><br><span class="line"><span class="title function_">f</span><span class="params">(<span class="type">void</span>)</span></span><br><span class="line">&#123;</span><br><span class="line">    <span class="type">int</span> a[<span class="number">4</span>];</span><br><span class="line">    <span class="type">int</span> *b = <span class="built_in">malloc</span>(<span class="number">16</span>);</span><br><span class="line">    <span class="type">int</span> *c;</span><br><span class="line">    <span class="type">int</span> i;</span><br><span class="line"></span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;1: a = %p, b = %p, c = %p\n&quot;</span>, a, b, c);</span><br><span class="line"></span><br><span class="line">    c = a;</span><br><span class="line">    <span class="keyword">for</span> (i = <span class="number">0</span>; i &lt; <span class="number">4</span>; i++)</span><br><span class="line">        a[i] = <span class="number">100</span> + i;</span><br><span class="line">    c[<span class="number">0</span>] = <span class="number">200</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;2: a[0] = %d, a[1] = %d, a[2] = %d, a[3] = %d\n&quot;</span>,</span><br><span class="line">           a[<span class="number">0</span>], a[<span class="number">1</span>], a[<span class="number">2</span>], a[<span class="number">3</span>]);</span><br><span class="line"></span><br><span class="line">    c[<span class="number">1</span>] = <span class="number">300</span>;</span><br><span class="line">    *(c + <span class="number">2</span>) = <span class="number">301</span>;</span><br><span class="line">    <span class="number">3</span>[c] = <span class="number">302</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;3: a[0] = %d, a[1] = %d, a[2] = %d, a[3] = %d\n&quot;</span>,</span><br><span class="line">           a[<span class="number">0</span>], a[<span class="number">1</span>], a[<span class="number">2</span>], a[<span class="number">3</span>]);</span><br><span class="line"></span><br><span class="line">    c = c + <span class="number">1</span>;</span><br><span class="line">    *c = <span class="number">400</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;4: a[0] = %d, a[1] = %d, a[2] = %d, a[3] = %d\n&quot;</span>,</span><br><span class="line">           a[<span class="number">0</span>], a[<span class="number">1</span>], a[<span class="number">2</span>], a[<span class="number">3</span>]);</span><br><span class="line"></span><br><span class="line">    c = (<span class="type">int</span> *) ((<span class="type">char</span> *) c + <span class="number">1</span>);</span><br><span class="line">    *c = <span class="number">500</span>;</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;5: a[0] = %d, a[1] = %d, a[2] = %d, a[3] = %d\n&quot;</span>,</span><br><span class="line">           a[<span class="number">0</span>], a[<span class="number">1</span>], a[<span class="number">2</span>], a[<span class="number">3</span>]);</span><br><span class="line"></span><br><span class="line">    b = (<span class="type">int</span> *) a + <span class="number">1</span>;</span><br><span class="line">    c = (<span class="type">int</span> *) ((<span class="type">char</span> *) a + <span class="number">1</span>);</span><br><span class="line">    <span class="built_in">printf</span>(<span class="string">&quot;6: a = %p, b = %p, c = %p\n&quot;</span>, a, b, c);</span><br><span class="line">&#125;</span><br><span class="line"></span><br><span class="line"><span class="type">int</span></span><br><span class="line"><span class="title function_">main</span><span class="params">(<span class="type">int</span> ac, <span class="type">char</span> **av)</span></span><br><span class="line">&#123;</span><br><span class="line">    f();</span><br><span class="line">    <span class="keyword">return</span> <span class="number">0</span>;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/10/06/labs/use_git/git1/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/10/06/tranlate_books/Use%20GUN%20Debugger/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#C-Pointers-gdb"><span class="nav-number">1.</span> <span class="nav-text">C, Pointers, gdb</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E6%88%91%E7%9A%84%E7%AC%AC%E4%B8%80%E4%B8%AA%E5%86%85%E5%AD%98bug"><span class="nav-number">2.</span> <span class="nav-text">我的第一个内存bug</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#C%E8%AF%AD%E8%A8%80%E4%B8%AD%E7%9A%84%E5%86%85%E5%AD%98"><span class="nav-number">3.</span> <span class="nav-text">C语言中的内存</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#C%E8%AF%AD%E8%A8%80%E6%8C%87%E9%92%88"><span class="nav-number">4.</span> <span class="nav-text">C语言指针</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8C%87%E9%92%88%E8%AF%AD%E6%B3%95"><span class="nav-number">4.1.</span> <span class="nav-text">指针语法</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E5%9B%9E%E5%88%B0%E5%86%85%E5%AD%98"><span class="nav-number">4.2.</span> <span class="nav-text">回到内存</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8C%87%E9%92%88%E7%AE%97%E6%9C%AF%E8%BF%90%E7%AE%97%EF%BC%8C%E8%80%B6%EF%BC%81"><span class="nav-number">4.3.</span> <span class="nav-text">指针算术运算，耶！</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#%E6%8C%87%E9%92%88%E7%AE%97%E6%9C%AF%E8%BF%90%E7%AE%97%EF%BC%8C%E5%94%89%E2%80%A6"><span class="nav-number">4.4.</span> <span class="nav-text">指针算术运算，唉…</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#C%E8%AF%AD%E8%A8%80%E6%95%B0%E7%BB%84"><span class="nav-number">5.</span> <span class="nav-text">C语言数组</span></a><ol class="nav-child"><li class="nav-item nav-level-2"><a class="nav-link" href="#C%E8%AF%AD%E8%A8%80%E6%95%B0%E7%BB%84%E7%9A%84%E7%BC%BA%E9%99%B7"><span class="nav-number">5.1.</span> <span class="nav-text">C语言数组的缺陷</span></a></li></ol></li><li class="nav-item nav-level-1"><a class="nav-link" href="#C%E8%AF%AD%E8%A8%80%E7%9A%84%E4%BD%8D%E8%BF%90%E7%AE%97%E7%AC%A6"><span class="nav-number">6.</span> <span class="nav-text">C语言的位运算符</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#C%E8%AF%AD%E8%A8%80%E7%B1%BB%E5%9E%8B%E8%BD%AC%E6%8D%A2"><span class="nav-number">7.</span> <span class="nav-text">C语言类型转换</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#C%E8%AF%AD%E8%A8%80%E7%9A%84-include"><span class="nav-number">8.</span> <span class="nav-text">C语言的#include</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E4%B8%80%E4%B8%AA%E5%85%B3%E4%BA%8E%E6%8C%87%E9%92%88%E7%9A%84%E7%A4%BA%E4%BE%8B"><span class="nav-number">9.</span> <span class="nav-text">一个关于指针的示例</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">xiaoq</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">xiaoq</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'nPTQNF98hlhFVhx3uT28h3EW-gzGzoHsz',
+      appKey     : 'Hj5CW3nJJnJ3rBlGeKK8XQLa',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

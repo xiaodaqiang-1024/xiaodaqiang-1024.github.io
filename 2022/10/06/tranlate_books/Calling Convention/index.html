@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Calling Convention本章描述了RV32和RV64程序的C编译器标准和两个调用约定：附加标准通用扩展（RV32G&#x2F;RV64G）的基础ISA约定，以及缺乏浮点单元（例如RV32I&#x2F;RV64I）实现的软浮点约定。  使用ISA扩展的实现可能需要扩展调用约定。  18.1 C语言的数据类型和对齐方式表18.1总结了RISC-V C程序本机支持的数据类型。在RV32和RV">
+<meta property="og:type" content="article">
+<meta property="og:title" content="肖大强的个人博客">
+<meta property="og:url" content="http://example.com/2022/10/06/tranlate_books/Calling%20Convention/index.html">
+<meta property="og:site_name" content="肖大强的个人博客">
+<meta property="og:description" content="Calling Convention本章描述了RV32和RV64程序的C编译器标准和两个调用约定：附加标准通用扩展（RV32G&#x2F;RV64G）的基础ISA约定，以及缺乏浮点单元（例如RV32I&#x2F;RV64I）实现的软浮点约定。  使用ISA扩展的实现可能需要扩展调用约定。  18.1 C语言的数据类型和对齐方式表18.1总结了RISC-V C程序本机支持的数据类型。在RV32和RV">
+<meta property="og:locale">
+<meta property="article:published_time" content="2022-10-06T15:06:31.596Z">
+<meta property="article:modified_time" content="2022-10-06T14:55:44.992Z">
+<meta property="article:author" content="xiaoq">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/10/06/tranlate_books/Calling%20Convention/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title> | 肖大强的个人博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">肖大强的个人博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/10/06/tranlate_books/Calling%20Convention/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="xiaoq">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="肖大强的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-10-06 23:06:31 / Modified: 22:55:44" itemprop="dateCreated datePublished" datetime="2022-10-06T23:06:31+08:00">2022-10-06</time>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/10/06/tranlate_books/Calling%20Convention/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/10/06/tranlate_books/Calling%20Convention/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Calling-Convention"><a href="#Calling-Convention" class="headerlink" title="Calling Convention"></a>Calling Convention</h1><p>本章描述了RV32和RV64程序的C编译器标准和两个调用约定：附加标准通用扩展（RV32G&#x2F;RV64G）的基础ISA约定，以及缺乏浮点单元（例如RV32I&#x2F;RV64I）实现的软浮点约定。</p>
+<blockquote>
+<p>使用ISA扩展的实现可能需要扩展调用约定。</p>
+</blockquote>
+<h1 id="18-1-C语言的数据类型和对齐方式"><a href="#18-1-C语言的数据类型和对齐方式" class="headerlink" title="18.1 C语言的数据类型和对齐方式"></a>18.1 C语言的数据类型和对齐方式</h1><p>表18.1总结了RISC-V C程序本机支持的数据类型。在RV32和RV64 C编译器中，C中的<code>int</code>类型都是32位。另一方面，<code>long</code>和指针都与整数寄存器位数一致，所以在RV32中，两者都是32位，而在RV64中，两者都是64位。同样，RV32采用ILP32整数模型，而RV64是LP64。在RV32和RV64中，C类型<code>long long</code>是64位整数，<code>float</code>是遵循IEEE754-2008标准的32位浮点数，<code>double</code>是遵循IEEE754-2008标准的64位浮点数，<code>long double</code>是遵循IEEE754-2008标准的128位浮点数。</p>
+<p>C类型<code>char</code>和<code>unsigned char</code>都是8位无符号整数，当存储在RISC-V整数寄存器中时是零扩展。<code>unsigned short</code>是16位无符号整数，当存储在RISC-V整数寄存器中时是零扩展。<code>signed char</code>是8位有符号整数，当存储在RISC-V整数寄存器中时是符号扩展的，即比特位从（XLEN-1）到7都是相等的。<code>short</code>是16位有符号整数，当存储在寄存器中时是符号扩展的。</p>
+<p>在RV64中，32位的数据类型（如<code>int</code>）以合适的符号扩展存储在整数寄存器中；也就是说，比特位从63到31都是相等的。即使是无符号的32位类型，这个限制也适用。</p>
+<p>RV32和RV64 C编译器和兼容软件将所有上述数据类型存储在内存中时保持自然对齐。</p>
+<table>
+<thead>
+<tr>
+<th><strong>C数据类型</strong></th>
+<th><strong>描述</strong></th>
+<th><strong>RV32中字节数</strong></th>
+<th><strong>RV64中字节数</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>char</code></td>
+<td>字符值&#x2F;字节</td>
+<td>1</td>
+<td>1</td>
+</tr>
+<tr>
+<td><code>short</code></td>
+<td>短整型</td>
+<td>2</td>
+<td>2</td>
+</tr>
+<tr>
+<td><code>int</code></td>
+<td>整型</td>
+<td>4</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>long</code></td>
+<td>长整型</td>
+<td>4</td>
+<td>8</td>
+</tr>
+<tr>
+<td><code>long long</code></td>
+<td>超长整型</td>
+<td>8</td>
+<td>8</td>
+</tr>
+<tr>
+<td><code>void*</code></td>
+<td>指针</td>
+<td>4</td>
+<td>8</td>
+</tr>
+<tr>
+<td><code>float</code></td>
+<td>单精度浮点型</td>
+<td>4</td>
+<td>4</td>
+</tr>
+<tr>
+<td><code>double</code></td>
+<td>双精度浮点型</td>
+<td>8</td>
+<td>8</td>
+</tr>
+<tr>
+<td><code>long double</code></td>
+<td>扩展精度浮点型</td>
+<td>16</td>
+<td>16</td>
+</tr>
+</tbody></table>
+<p>表18.1：基于RISC-V指令集的C编译器数据类型</p>
+<h1 id="18-2-RVG调用协定"><a href="#18-2-RVG调用协定" class="headerlink" title="18.2 RVG调用协定"></a>18.2 RVG调用协定</h1><p>RISC-V调用约定尽可能在寄存器中传递参数。为此，最多使用八个整数寄存器<strong>a0</strong>-<strong>a7</strong>和八个浮点寄存器<strong>fa0</strong>-<strong>fa7</strong>。</p>
+<p>如果函数的参数被概念化为C结构体的字段，结构体中的每个字段都按指针长度对齐，则参数寄存器是该结构体中前八个指针字长参数的副本。如果第i(i&lt;8)个参数是浮点类型，则在浮点寄存器<strong>fai</strong>中传递；否则，在整数寄存器<strong>ai</strong>中传递。但是，浮点参数如果属于<code>union</code>或结构体中数组字段的一部分，就会在整数寄存器中传递。此外，变参函数的浮点参数（未显式命名参数列表的函数）在整数寄存器中传递。</p>
+<p>小于指针字长的参数在参数寄存器的最低有效位(LSB)中传递。相应地，栈上传递的小于指针字长的参数出现在指针字的较低地址中，因为RISC-V有一个小端存储系统。</p>
+<p>当在堆栈上传递两倍于指针字大小的基本参数时，它们是自然对齐的。当它们在整数寄存器中传递时，它们驻留在对齐的偶数号-奇数号寄存器对中，偶数寄存器保存最低有效位。例如，在RV32中，函数<code>void foo(int, long long)</code>的第一个参数在<strong>a0</strong>中传递，第二个参数在<strong>a2</strong>和<strong>a3</strong>中传递。<strong>a1</strong>中不传递任何内容。</p>
+<p>大于指针字大小两倍的参数通过引用传递。</p>
+<p>结构体中未在参数寄存器中传递的部分在栈上传递。栈指针<strong>sp</strong>指向未在寄存器中传递的第一个参数。</p>
+<p>函数在整数寄存器<strong>a0</strong>和<strong>a1</strong>以及浮点寄存器<strong>fa0</strong>和<strong>fa1</strong>中返回值。只有当浮点值是原始值（传入时<strong>fa0</strong>和<strong>fa1</strong>作为参数寄存器，原始值是指该参数不改变而直接返回）或作为仅有一两个浮点值组成的结构体的成员时，才会从浮点寄存器中返回。长度恰好为两个指针字长的其他返回值将在<strong>a0</strong>和<strong>a1</strong>中返回。较大的返回值完全在内存中传递；调用方分配此内存区域，并将指针作为隐式的第一个参数传递给被调用方。</p>
+<p>在标准的RISC-V调用约定中，栈向下增长，栈指针始终保持16字节对齐。</p>
+<p>除了自变量和返回值寄存器之外，还有在调用中不稳定的七个整数寄存器<strong>t0</strong>-<strong>t6</strong>和十二个浮点寄存器<strong>ft0</strong>-<strong>ft11</strong>作为临时寄存器，如果之后使用，调用者必须保存它们。十二个整数寄存器<strong>s0</strong>-<strong>s11</strong>和十二个浮点寄存器<strong>fs0</strong>-<strong>fs11</strong>在调用中受保护，如果使用，被调用者必须保存它们。表18.2显示了调用约定中每个整数和浮点寄存器的作用。</p>
+<table>
+<thead>
+<tr>
+<th><strong>寄存器</strong></th>
+<th><strong>ABI名称</strong></th>
+<th><strong>描述</strong></th>
+<th><strong>保存者</strong></th>
+</tr>
+</thead>
+<tbody><tr>
+<td>x0</td>
+<td>zero</td>
+<td>硬布线零</td>
+<td></td>
+</tr>
+<tr>
+<td>x1</td>
+<td>ra</td>
+<td>返回地址</td>
+<td>调用者</td>
+</tr>
+<tr>
+<td>x2</td>
+<td>sp</td>
+<td>栈指针</td>
+<td>被调用者</td>
+</tr>
+<tr>
+<td>x3</td>
+<td>gp</td>
+<td>全局指针</td>
+<td></td>
+</tr>
+<tr>
+<td>x4</td>
+<td>tp</td>
+<td>线程指针</td>
+<td></td>
+</tr>
+<tr>
+<td>x5-7</td>
+<td>t0-2</td>
+<td>临时暂存单元</td>
+<td>调用者</td>
+</tr>
+<tr>
+<td>x8</td>
+<td>s0&#x2F;fp</td>
+<td>保留寄存器&#x2F;帧指针</td>
+<td>被调用者</td>
+</tr>
+<tr>
+<td>x9</td>
+<td>s1</td>
+<td>保留寄存器</td>
+<td>被调用者</td>
+</tr>
+<tr>
+<td>x10-11</td>
+<td>a0-1</td>
+<td>函数参数&#x2F;返回值</td>
+<td>调用者</td>
+</tr>
+<tr>
+<td>x12-17</td>
+<td>a2-7</td>
+<td>函数参数</td>
+<td>调用者</td>
+</tr>
+<tr>
+<td>x18-27</td>
+<td>s2-11</td>
+<td>保留寄存器</td>
+<td>被调用者</td>
+</tr>
+<tr>
+<td>x28-31</td>
+<td>t3-6</td>
+<td>临时暂存单元</td>
+<td>调用者·</td>
+</tr>
+<tr>
+<td>f0-7</td>
+<td>ft0-7</td>
+<td>浮点临时暂存单元</td>
+<td>调用者</td>
+</tr>
+<tr>
+<td>f8-9</td>
+<td>fs0-1</td>
+<td>浮点保留寄存器</td>
+<td>被调用者</td>
+</tr>
+<tr>
+<td>f10-11</td>
+<td>fa0-1</td>
+<td>浮点参数&#x2F;返回值</td>
+<td>调用者</td>
+</tr>
+<tr>
+<td>f12-17</td>
+<td>fa2-7</td>
+<td>浮点参数</td>
+<td>调用者</td>
+</tr>
+<tr>
+<td>f18-27</td>
+<td>fs2-11</td>
+<td>浮点保留寄存器</td>
+<td>被调用者</td>
+</tr>
+<tr>
+<td>f28-31</td>
+<td>ft8-11</td>
+<td>浮点临时暂存单元</td>
+<td>调用者</td>
+</tr>
+</tbody></table>
+<p>表18.2 RISC-V调用协定寄存器的使用</p>
+<h1 id="18-3-软浮点数调用协定"><a href="#18-3-软浮点数调用协定" class="headerlink" title="18.3 软浮点数调用协定"></a>18.3 软浮点数调用协定</h1><p>软浮点调用约定用于缺乏浮点硬件的RV32和RV64实现。它避免使用了F、D和Q标准扩展中的所有指令，从而避免使用<strong>f</strong>寄存器。</p>
+<p>完整参数的传递和返回方式与RVG约定相同，栈规则也相同。浮点参数使用长度相同的整型参数的规则在整数寄存器中传递和返回。例如，在RV32中，函数<code>double foo(int, double, long double)</code>的第一个参数在<strong>a0</strong>中传递，第二个参数在<strong>a2</strong>和<strong>a3</strong>中传递，第三个参数通过<strong>a4</strong>传递引用；其结果在<strong>a0</strong>和<strong>a1</strong>中返回。在RV64中，参数以<strong>a0</strong>、<strong>a1</strong>和<strong>a2</strong>-<strong>a3</strong>对形式传递，结果以<strong>a0</strong>形式返回。</p>
+<p>动态舍入模式和累计异常标志可以通过C99头文件<em><strong>fenv.h</strong></em>提供的程序访问。</p>
+<blockquote>
+<p>注：为了编写高精度浮点数的运算，编程人员需要控制浮点数环境的各个方面：结果如何舍入，浮点数表达式如何简化与变换，如何处理浮点数异常（如下溢之类的浮点数异常是忽略还是产生错误）等等。C99引入了<em><strong>fenv.h</strong></em>来控制浮点数环境。</p>
+</blockquote>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/10/06/tranlate_books/Introduction/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/10/06/tranlate_books/book-riscv-rev1/c1/s0/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Calling-Convention"><span class="nav-number">1.</span> <span class="nav-text">Calling Convention</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#18-1-C%E8%AF%AD%E8%A8%80%E7%9A%84%E6%95%B0%E6%8D%AE%E7%B1%BB%E5%9E%8B%E5%92%8C%E5%AF%B9%E9%BD%90%E6%96%B9%E5%BC%8F"><span class="nav-number">2.</span> <span class="nav-text">18.1 C语言的数据类型和对齐方式</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#18-2-RVG%E8%B0%83%E7%94%A8%E5%8D%8F%E5%AE%9A"><span class="nav-number">3.</span> <span class="nav-text">18.2 RVG调用协定</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#18-3-%E8%BD%AF%E6%B5%AE%E7%82%B9%E6%95%B0%E8%B0%83%E7%94%A8%E5%8D%8F%E5%AE%9A"><span class="nav-number">4.</span> <span class="nav-text">18.3 软浮点数调用协定</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">xiaoq</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">xiaoq</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'nPTQNF98hlhFVhx3uT28h3EW-gzGzoHsz',
+      appKey     : 'Hj5CW3nJJnJ3rBlGeKK8XQLa',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

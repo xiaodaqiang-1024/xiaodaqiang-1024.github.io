@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Lab10: mmapmmap(hard)mmap和munmap系统调用允许UNIX程序对其地址空间进行详细控制。它们可用于在进程之间共享内存，将文件映射到进程地址空间，并作为用户级页面错误方案的一部分，如本课程中讨论的垃圾收集算法。在本实验室中，您将把mmap和munmap添加到xv6中，重点关注内存映射文件（memory-mapped files）。 获取实验室的xv6源代码并切换到mmap分">
+<meta property="og:type" content="article">
+<meta property="og:title" content="肖大强的个人博客">
+<meta property="og:url" content="http://example.com/2022/10/06/labs/requirements/lab10/index.html">
+<meta property="og:site_name" content="肖大强的个人博客">
+<meta property="og:description" content="Lab10: mmapmmap(hard)mmap和munmap系统调用允许UNIX程序对其地址空间进行详细控制。它们可用于在进程之间共享内存，将文件映射到进程地址空间，并作为用户级页面错误方案的一部分，如本课程中讨论的垃圾收集算法。在本实验室中，您将把mmap和munmap添加到xv6中，重点关注内存映射文件（memory-mapped files）。 获取实验室的xv6源代码并切换到mmap分">
+<meta property="og:locale">
+<meta property="article:published_time" content="2022-10-06T15:06:31.486Z">
+<meta property="article:modified_time" content="2022-10-06T14:55:44.977Z">
+<meta property="article:author" content="xiaoq">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/10/06/labs/requirements/lab10/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title> | 肖大强的个人博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">肖大强的个人博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/10/06/labs/requirements/lab10/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="xiaoq">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="肖大强的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-10-06 23:06:31 / Modified: 22:55:44" itemprop="dateCreated datePublished" datetime="2022-10-06T23:06:31+08:00">2022-10-06</time>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/10/06/labs/requirements/lab10/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/10/06/labs/requirements/lab10/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Lab10-mmap"><a href="#Lab10-mmap" class="headerlink" title="Lab10: mmap"></a>Lab10: mmap</h1><h1 id="mmap-hard"><a href="#mmap-hard" class="headerlink" title="mmap(hard)"></a>mmap(hard)</h1><p><code>mmap</code>和<code>munmap</code>系统调用允许UNIX程序对其地址空间进行详细控制。它们可用于在进程之间共享内存，将文件映射到进程地址空间，并作为用户级页面错误方案的一部分，如本课程中讨论的垃圾收集算法。在本实验室中，您将把<code>mmap</code>和<code>munmap</code>添加到xv6中，重点关注内存映射文件（memory-mapped files）。</p>
+<p>获取实验室的xv6源代码并切换到<code>mmap</code>分支：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ git fetch</span><br><span class="line">$ git checkout mmap</span><br><span class="line">$ make clean</span><br></pre></td></tr></table></figure>
+
+<p>手册页面（运行<code>man 2 mmap</code>）显示了<code>mmap</code>的以下声明：</p>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="type">void</span> *<span class="title function_">mmap</span><span class="params">(<span class="type">void</span> *addr, <span class="type">size_t</span> length, <span class="type">int</span> prot, <span class="type">int</span> flags,</span></span><br><span class="line"><span class="params">           <span class="type">int</span> fd, <span class="type">off_t</span> offset)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>可以通过多种方式调用<code>mmap</code>，但本实验只需要与内存映射文件相关的功能子集。您可以假设<code>addr</code>始终为零，这意味着内核应该决定映射文件的虚拟地址。<code>mmap</code>返回该地址，如果失败则返回<code>0xffffffffffffffff</code>。<code>length</code>是要映射的字节数；它可能与文件的长度不同。<code>prot</code>指示内存是否应映射为可读、可写，以及&#x2F;或者可执行的；您可以认为<code>prot</code>是<code>PROT_READ</code>或<code>PROT_WRITE</code>或两者兼有。<code>flags</code>要么是<code>MAP_SHARED</code>（映射内存的修改应写回文件），要么是<code>MAP_PRIVATE</code>（映射内存的修改不应写回文件）。您不必在<code>flags</code>中实现任何其他位。<code>fd</code>是要映射的文件的打开文件描述符。可以假定<code>offset</code>为零（它是要映射的文件的起点）。</p>
+<p>允许进程映射同一个<code>MAP_SHARED</code>文件而不共享物理页面。</p>
+<p><code>munmap(addr, length)</code>应删除指定地址范围内的<code>mmap</code>映射。如果进程修改了内存并将其映射为<code>MAP_SHARED</code>，则应首先将修改写入文件。<code>munmap</code>调用可能只覆盖<code>mmap</code>区域的一部分，但您可以认为它取消映射的位置要么在区域起始位置，要么在区域结束位置，要么就是整个区域(但不会在区域中间“打洞”)。</p>
+<blockquote>
+<p>[!TIP|label:YOUR JOB]<br>您应该实现足够的<code>mmap</code>和<code>munmap</code>功能，以使<code>mmaptest</code>测试程序正常工作。如果<code>mmaptest</code>不会用到某个<code>mmap</code>的特性，则不需要实现该特性。</p>
+</blockquote>
+<p>完成后，您应该会看到以下输出： </p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br></pre></td><td class="code"><pre><span class="line">$ mmaptest</span><br><span class="line">mmap_test starting</span><br><span class="line"><span class="built_in">test</span> mmap f</span><br><span class="line"><span class="built_in">test</span> mmap f: OK</span><br><span class="line"><span class="built_in">test</span> mmap private</span><br><span class="line"><span class="built_in">test</span> mmap private: OK</span><br><span class="line"><span class="built_in">test</span> mmap read-only</span><br><span class="line"><span class="built_in">test</span> mmap read-only: OK</span><br><span class="line"><span class="built_in">test</span> mmap <span class="built_in">read</span>/write</span><br><span class="line"><span class="built_in">test</span> mmap <span class="built_in">read</span>/write: OK</span><br><span class="line"><span class="built_in">test</span> mmap dirty</span><br><span class="line"><span class="built_in">test</span> mmap dirty: OK</span><br><span class="line"><span class="built_in">test</span> not-mapped unmap</span><br><span class="line"><span class="built_in">test</span> not-mapped unmap: OK</span><br><span class="line"><span class="built_in">test</span> mmap two files</span><br><span class="line"><span class="built_in">test</span> mmap two files: OK</span><br><span class="line">mmap_test: ALL OK</span><br><span class="line">fork_test starting</span><br><span class="line">fork_test OK</span><br><span class="line">mmaptest: all tests succeeded</span><br><span class="line">$ usertests</span><br><span class="line">usertests starting</span><br><span class="line">...</span><br><span class="line">ALL TESTS PASSED</span><br><span class="line">$ </span><br></pre></td></tr></table></figure>
+
+<p><strong>提示：</strong></p>
+<ul>
+<li>首先，向<code>UPROGS</code>添加<code>_mmaptest</code>，以及<code>mmap</code>和<code>munmap</code>系统调用，以便让<em><strong>user&#x2F;mmaptest.c</strong></em>进行编译。现在，只需从<code>mmap</code>和<code>munmap</code>返回错误。我们在<em><strong>kernel&#x2F;fcntl.h</strong></em>中为您定义了<code>PROT_READ</code>等。运行<code>mmaptest</code>，它将在第一次<code>mmap</code>调用时失败。</li>
+<li>惰性地填写页表，以响应页错误。也就是说，<code>mmap</code>不应该分配物理内存或读取文件。相反，在<code>usertrap</code>中（或由<code>usertrap</code>调用）的页面错误处理代码中执行此操作，就像在lazy page allocation实验中一样。惰性分配的原因是确保大文件的<code>mmap</code>是快速的，并且比物理内存大的文件的<code>mmap</code>是可能的。</li>
+<li>跟踪<code>mmap</code>为每个进程映射的内容。定义与第15课中描述的VMA（虚拟内存区域）对应的结构体，记录<code>mmap</code>创建的虚拟内存范围的地址、长度、权限、文件等。由于xv6内核中没有内存分配器，因此可以声明一个固定大小的VMA数组，并根据需要从该数组进行分配。大小为16应该就足够了。</li>
+<li>实现<code>mmap</code>：在进程的地址空间中找到一个未使用的区域来映射文件，并将VMA添加到进程的映射区域表中。VMA应该包含指向映射文件对应<code>struct file</code>的指针；<code>mmap</code>应该增加文件的引用计数，以便在文件关闭时结构体不会消失（提示：请参阅<code>filedup</code>）。运行<code>mmaptest</code>：第一次<code>mmap</code>应该成功，但是第一次访问被<code>mmap</code>的内存将导致页面错误并终止<code>mmaptest</code>。</li>
+<li>添加代码以导致在<code>mmap</code>的区域中产生页面错误，从而分配一页物理内存，将4096字节的相关文件读入该页面，并将其映射到用户地址空间。使用<code>readi</code>读取文件，它接受一个偏移量参数，在该偏移处读取文件（但必须lock&#x2F;unlock传递给<code>readi</code>的索引结点）。不要忘记在页面上正确设置权限。运行<code>mmaptest</code>；它应该到达第一个<code>munmap</code>。</li>
+<li>实现<code>munmap</code>：找到地址范围的VMA并取消映射指定页面（提示：使用<code>uvmunmap</code>）。如果<code>munmap</code>删除了先前<code>mmap</code>的所有页面，它应该减少相应<code>struct file</code>的引用计数。如果未映射的页面已被修改，并且文件已映射到<code>MAP_SHARED</code>，请将页面写回该文件。查看<code>filewrite</code>以获得灵感。</li>
+<li>理想情况下，您的实现将只写回程序实际修改的<code>MAP_SHARED</code>页面。RISC-V PTE中的脏位（<code>D</code>）表示是否已写入页面。但是，<code>mmaptest</code>不检查非脏页是否没有回写；因此，您可以不用看<code>D</code>位就写回页面。</li>
+<li>修改<code>exit</code>将进程的已映射区域取消映射，就像调用了<code>munmap</code>一样。运行<code>mmaptest</code>；<code>mmap_test</code>应该通过，但可能不会通过<code>fork_test</code>。</li>
+<li>修改<code>fork</code>以确保子对象具有与父对象相同的映射区域。不要忘记增加VMA的<code>struct file</code>的引用计数。在子进程的页面错误处理程序中，可以分配新的物理页面，而不是与父级共享页面。后者会更酷，但需要更多的实施工作。运行<code>mmaptest</code>；它应该通过<code>mmap_test</code>和<code>fork_test</code>。</li>
+</ul>
+<p>运行<code>usertests</code>以确保一切正常。</p>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/10/06/labs/answers/lab8/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/10/06/labs/requirements/lab1/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Lab10-mmap"><span class="nav-number">1.</span> <span class="nav-text">Lab10: mmap</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#mmap-hard"><span class="nav-number">2.</span> <span class="nav-text">mmap(hard)</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">xiaoq</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">xiaoq</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'nPTQNF98hlhFVhx3uT28h3EW-gzGzoHsz',
+      appKey     : 'Hj5CW3nJJnJ3rBlGeKK8XQLa',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

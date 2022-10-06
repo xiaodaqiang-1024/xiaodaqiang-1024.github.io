@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Lab5: xv6 lazy page allocation操作系统可以使用页表硬件的技巧之一是延迟分配用户空间堆内存（lazy allocation of user-space heap memory）。Xv6应用程序使用sbrk()系统调用向内核请求堆内存。在我们给出的内核中，sbrk()分配物理内存并将其映射到进程的虚拟地址空间。内核为一个大请求分配和映射内存可能需要很长时间。例如，考虑由2">
+<meta property="og:type" content="article">
+<meta property="og:title" content="肖大强的个人博客">
+<meta property="og:url" content="http://example.com/2022/10/06/labs/requirements/lab5/index.html">
+<meta property="og:site_name" content="肖大强的个人博客">
+<meta property="og:description" content="Lab5: xv6 lazy page allocation操作系统可以使用页表硬件的技巧之一是延迟分配用户空间堆内存（lazy allocation of user-space heap memory）。Xv6应用程序使用sbrk()系统调用向内核请求堆内存。在我们给出的内核中，sbrk()分配物理内存并将其映射到进程的虚拟地址空间。内核为一个大请求分配和映射内存可能需要很长时间。例如，考虑由2">
+<meta property="og:locale">
+<meta property="article:published_time" content="2022-10-06T15:06:31.502Z">
+<meta property="article:modified_time" content="2022-10-06T14:55:44.977Z">
+<meta property="article:author" content="xiaoq">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/10/06/labs/requirements/lab5/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title> | 肖大强的个人博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">肖大强的个人博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/10/06/labs/requirements/lab5/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="xiaoq">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="肖大强的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-10-06 23:06:31 / Modified: 22:55:44" itemprop="dateCreated datePublished" datetime="2022-10-06T23:06:31+08:00">2022-10-06</time>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/10/06/labs/requirements/lab5/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/10/06/labs/requirements/lab5/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Lab5-xv6-lazy-page-allocation"><a href="#Lab5-xv6-lazy-page-allocation" class="headerlink" title="Lab5: xv6 lazy page allocation"></a>Lab5: xv6 lazy page allocation</h1><p>操作系统可以使用页表硬件的技巧之一是延迟分配用户空间堆内存（lazy allocation of user-space heap memory）。Xv6应用程序使用<code>sbrk()</code>系统调用向内核请求堆内存。在我们给出的内核中，<code>sbrk()</code>分配物理内存并将其映射到进程的虚拟地址空间。内核为一个大请求分配和映射内存可能需要很长时间。例如，考虑由262144个4096字节的页组成的千兆字节；即使单独一个页面的分配开销很低，但合起来如此大的分配数量将不可忽视。此外，有些程序申请分配的内存比实际使用的要多（例如，实现稀疏数组），或者为了以后的不时之需而分配内存。为了让<code>sbrk()</code>在这些情况下更快地完成，复杂的内核会延迟分配用户内存。也就是说，<code>sbrk()</code>不分配物理内存，只是记住分配了哪些用户地址，并在用户页表中将这些地址标记为无效。当进程第一次尝试使用延迟分配中给定的页面时，CPU生成一个页面错误（page fault），内核通过分配物理内存、置零并添加映射来处理该错误。您将在这个实验室中向xv6添加这个延迟分配特性。</p>
+<blockquote>
+<p>[!WARNING|label:Attention]<br>在开始编码之前，请阅读xv6手册的第4章（特别是4.6），以及可能要修改的相关文件：</p>
+<ul>
+<li><em><strong>kernel&#x2F;trap.c</strong></em></li>
+<li><em><strong>kernel&#x2F;vm.c</strong></em></li>
+<li><em><strong>kernel&#x2F;sysproc.c</strong></em></li>
+</ul>
+</blockquote>
+<p>要启动实验，请切换到<code>lazy</code>分支：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ git fetch</span><br><span class="line">$ git checkout lazy</span><br><span class="line">$ make clean</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="Eliminate-allocation-from-sbrk-easy"><a href="#Eliminate-allocation-from-sbrk-easy" class="headerlink" title="Eliminate allocation from sbrk() (easy)"></a>Eliminate allocation from sbrk() (easy)</h1><blockquote>
+<p>[!TIP|label:YOUR JOB]<br>你的首项任务是删除<code>sbrk(n)</code>系统调用中的页面分配代码（位于<em><strong>sysproc.c</strong></em>中的函数<code>sys_sbrk()</code>）。<code>sbrk(n)</code>系统调用将进程的内存大小增加n个字节，然后返回新分配区域的开始部分（即旧的大小）。新的<code>sbrk(n)</code>应该只将进程的大小（<code>myproc()-&gt;sz</code>）增加n，然后返回旧的大小。它不应该分配内存——因此您应该删除对<code>growproc()</code>的调用（但是您仍然需要增加进程的大小！）。</p>
+</blockquote>
+<p>试着猜猜这个修改的结果是什么：将会破坏什么？</p>
+<p>进行此修改，启动xv6，并在shell中键入<code>echo hi</code>。你应该看到这样的输出：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">init: starting sh</span><br><span class="line">$ <span class="built_in">echo</span> hi</span><br><span class="line">usertrap(): unexpected scause 0x000000000000000f pid=3</span><br><span class="line">            sepc=0x0000000000001258 stval=0x0000000000004008</span><br><span class="line">va=0x0000000000004000 pte=0x0000000000000000</span><br><span class="line">panic: uvmunmap: not mapped</span><br></pre></td></tr></table></figure>
+
+<p>“<code>usertrap(): …</code>”这条消息来自<em><strong>trap.c</strong></em>中的用户陷阱处理程序；它捕获了一个不知道如何处理的异常。请确保您了解发生此页面错误的原因。“<code>stval=0x0..04008</code>”表示导致页面错误的虚拟地址是<code>0x4008</code>。</p>
+<h1 id="Lazy-allocation-moderate"><a href="#Lazy-allocation-moderate" class="headerlink" title="Lazy allocation (moderate)"></a>Lazy allocation (moderate)</h1><blockquote>
+<p>[!TIP|label:YOUR JOB]<br>修改<em><strong>trap.c</strong></em>中的代码以响应来自用户空间的页面错误，方法是新分配一个物理页面并映射到发生错误的地址，然后返回到用户空间，让进程继续执行。您应该在生成“<code>usertrap(): …</code>”消息的<code>printf</code>调用之前添加代码。你可以修改任何其他xv6内核代码，以使<code>echo hi</code>正常工作。</p>
+</blockquote>
+<p><strong>提示：</strong></p>
+<ul>
+<li>你可以在<code>usertrap()</code>中查看<code>r_scause()</code>的返回值是否为13或15来判断该错误是否为页面错误</li>
+<li><code>stval</code>寄存器中保存了造成页面错误的虚拟地址，你可以通过<code>r_stval()</code>读取</li>
+<li>参考<em><strong>vm.c</strong></em>中的<code>uvmalloc()</code>中的代码，那是一个<code>sbrk()</code>通过<code>growproc()</code>调用的函数。你将需要对<code>kalloc()</code>和<code>mappages()</code>进行调用</li>
+<li>使用<code>PGROUNDDOWN(va)</code>将出错的虚拟地址向下舍入到页面边界</li>
+<li>当前<code>uvmunmap()</code>会导致系统<code>panic</code>崩溃；请修改程序保证正常运行</li>
+<li>如果内核崩溃，请在<em><strong>kernel&#x2F;kernel.asm</strong></em>中查看<code>sepc</code></li>
+<li>使用pgtbl lab的<code>vmprint</code>函数打印页表的内容</li>
+<li>如果您看到错误“incomplete type proc”，请include“spinlock.h”然后是“proc.h”。</li>
+</ul>
+<p>如果一切正常，你的lazy allocation应该使<code>echo hi</code>正常运行。您应该至少有一个页面错误（因为延迟分配），也许有两个。</p>
+<h1 id="Lazytests-and-Usertests-moderate"><a href="#Lazytests-and-Usertests-moderate" class="headerlink" title="Lazytests and Usertests (moderate)"></a>Lazytests and Usertests (moderate)</h1><p>我们为您提供了<code>lazytests</code>，这是一个xv6用户程序，它测试一些可能会给您的惰性内存分配器带来压力的特定情况。修改内核代码，使所有<code>lazytests</code>和<code>usertests</code>都通过。</p>
+<ul>
+<li>处理<code>sbrk()</code>参数为负的情况。</li>
+<li>如果某个进程在高于<code>sbrk()</code>分配的任何虚拟内存地址上出现页错误，则终止该进程。</li>
+<li>在<code>fork()</code>中正确处理父到子内存拷贝。</li>
+<li>处理这种情形：进程从<code>sbrk()</code>向系统调用（如<code>read</code>或<code>write</code>）传递有效地址，但尚未分配该地址的内存。</li>
+<li>正确处理内存不足：如果在页面错误处理程序中执行<code>kalloc()</code>失败，则终止当前进程。</li>
+<li>处理用户栈下面的无效页面上发生的错误。</li>
+</ul>
+<p>如果内核通过<code>lazytests</code>和<code>usertests</code>，那么您的解决方案是可以接受的：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br></pre></td><td class="code"><pre><span class="line">$ lazytests</span><br><span class="line">lazytests starting</span><br><span class="line">running <span class="built_in">test</span> lazy alloc</span><br><span class="line"><span class="built_in">test</span> lazy alloc: OK</span><br><span class="line">running <span class="built_in">test</span> lazy unmap...</span><br><span class="line">usertrap(): ...</span><br><span class="line"><span class="built_in">test</span> lazy unmap: OK</span><br><span class="line">running <span class="built_in">test</span> out of memory</span><br><span class="line">usertrap(): ...</span><br><span class="line"><span class="built_in">test</span> out of memory: OK</span><br><span class="line">ALL TESTS PASSED</span><br><span class="line">$ usertests</span><br><span class="line">...</span><br><span class="line">ALL TESTS PASSED</span><br><span class="line">$</span><br></pre></td></tr></table></figure>
+
+
+
+<h1 id="可选的挑战练习"><a href="#可选的挑战练习" class="headerlink" title="可选的挑战练习"></a>可选的挑战练习</h1><ul>
+<li>让延时分配协同上一个实验中简化版的<code>copyin</code>一起工作。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/10/06/labs/requirements/lab4/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/10/06/labs/requirements/lab2/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Lab5-xv6-lazy-page-allocation"><span class="nav-number">1.</span> <span class="nav-text">Lab5: xv6 lazy page allocation</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Eliminate-allocation-from-sbrk-easy"><span class="nav-number">2.</span> <span class="nav-text">Eliminate allocation from sbrk() (easy)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Lazy-allocation-moderate"><span class="nav-number">3.</span> <span class="nav-text">Lazy allocation (moderate)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Lazytests-and-Usertests-moderate"><span class="nav-number">4.</span> <span class="nav-text">Lazytests and Usertests (moderate)</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%AF%E9%80%89%E7%9A%84%E6%8C%91%E6%88%98%E7%BB%83%E4%B9%A0"><span class="nav-number">5.</span> <span class="nav-text">可选的挑战练习</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">xiaoq</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">xiaoq</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'nPTQNF98hlhFVhx3uT28h3EW-gzGzoHsz',
+      appKey     : 'Hj5CW3nJJnJ3rBlGeKK8XQLa',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>

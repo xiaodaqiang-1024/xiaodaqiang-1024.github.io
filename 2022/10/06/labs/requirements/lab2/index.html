@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=2">
+<meta name="theme-color" content="#222">
+<meta name="generator" content="Hexo 6.3.0">
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png">
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png">
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png">
+  <link rel="mask-icon" href="/images/logo.svg" color="#222">
+
+<link rel="stylesheet" href="/css/main.css">
+
+
+<link rel="stylesheet" href="/lib/font-awesome/css/all.min.css">
+
+<script id="hexo-configurations">
+    var NexT = window.NexT || {};
+    var CONFIG = {"hostname":"example.com","root":"/","scheme":"Muse","version":"7.8.0","exturl":false,"sidebar":{"position":"left","display":"post","padding":18,"offset":12,"onmobile":false},"copycode":{"enable":false,"show_result":false,"style":null},"back2top":{"enable":true,"sidebar":false,"scrollpercent":false},"bookmark":{"enable":false,"color":"#222","save":"auto"},"fancybox":false,"mediumzoom":false,"lazyload":false,"pangu":false,"comments":{"style":"tabs","active":null,"storage":true,"lazyload":false,"nav":null},"algolia":{"hits":{"per_page":10},"labels":{"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}},"localsearch":{"enable":false,"trigger":"auto","top_n_per_article":1,"unescape":false,"preload":false},"motion":{"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}}};
+  </script>
+
+  <meta name="description" content="Lab2: system calls在上一个实验室中，您使用系统调用编写了一些实用程序。在本实验室中，您将向xv6添加一些新的系统调用，这将帮助您了解它们是如何工作的，并使您了解xv6内核的一些内部结构。您将在以后的实验室中添加更多系统调用。  [!WARNING|label:Attention]在你开始写代码之前，请阅读xv6手册《book-riscv-rev1》的第2章、第4章的第4.3节和第">
+<meta property="og:type" content="article">
+<meta property="og:title" content="肖大强的个人博客">
+<meta property="og:url" content="http://example.com/2022/10/06/labs/requirements/lab2/index.html">
+<meta property="og:site_name" content="肖大强的个人博客">
+<meta property="og:description" content="Lab2: system calls在上一个实验室中，您使用系统调用编写了一些实用程序。在本实验室中，您将向xv6添加一些新的系统调用，这将帮助您了解它们是如何工作的，并使您了解xv6内核的一些内部结构。您将在以后的实验室中添加更多系统调用。  [!WARNING|label:Attention]在你开始写代码之前，请阅读xv6手册《book-riscv-rev1》的第2章、第4章的第4.3节和第">
+<meta property="og:locale">
+<meta property="article:published_time" content="2022-10-06T15:06:31.502Z">
+<meta property="article:modified_time" content="2022-10-06T14:55:44.977Z">
+<meta property="article:author" content="xiaoq">
+<meta name="twitter:card" content="summary">
+
+<link rel="canonical" href="http://example.com/2022/10/06/labs/requirements/lab2/">
+
+
+<script id="page-configurations">
+  // https://hexo.io/docs/variables.html
+  CONFIG.page = {
+    sidebar: "",
+    isHome : false,
+    isPost : true,
+    lang   : 'zh'
+  };
+</script>
+
+  <title> | 肖大强的个人博客</title>
+  
+
+
+
+
+
+
+  <noscript>
+  <style>
+  .use-motion .brand,
+  .use-motion .menu-item,
+  .sidebar-inner,
+  .use-motion .post-block,
+  .use-motion .pagination,
+  .use-motion .comments,
+  .use-motion .post-header,
+  .use-motion .post-body,
+  .use-motion .collection-header { opacity: initial; }
+
+  .use-motion .site-title,
+  .use-motion .site-subtitle {
+    opacity: initial;
+    top: initial;
+  }
+
+  .use-motion .logo-line-before i { left: initial; }
+  .use-motion .logo-line-after i { right: initial; }
+  </style>
+</noscript>
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage">
+  <div class="container use-motion">
+    <div class="headband"></div>
+
+    <header class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-container">
+  <div class="site-nav-toggle">
+    <div class="toggle" aria-label="Toggle navigation bar">
+      <span class="toggle-line toggle-line-first"></span>
+      <span class="toggle-line toggle-line-middle"></span>
+      <span class="toggle-line toggle-line-last"></span>
+    </div>
+  </div>
+
+  <div class="site-meta">
+
+    <a href="/" class="brand" rel="start">
+      <span class="logo-line-before"><i></i></span>
+      <h1 class="site-title">肖大强的个人博客</h1>
+      <span class="logo-line-after"><i></i></span>
+    </a>
+  </div>
+
+  <div class="site-nav-right">
+    <div class="toggle popup-trigger">
+    </div>
+  </div>
+</div>
+
+
+
+
+<nav class="site-nav">
+  <ul id="menu" class="main-menu menu">
+        <li class="menu-item menu-item-home">
+
+    <a href="/" rel="section"><i class="fa fa-home fa-fw"></i>Home</a>
+
+  </li>
+        <li class="menu-item menu-item-archives">
+
+    <a href="/archives/" rel="section"><i class="fa fa-archive fa-fw"></i>Archives</a>
+
+  </li>
+  </ul>
+</nav>
+
+
+
+
+</div>
+    </header>
+
+    
+  <div class="back-to-top">
+    <i class="fa fa-arrow-up"></i>
+    <span>0%</span>
+  </div>
+
+
+    <main class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          
+
+          <div class="content post posts-expand">
+            
+
+    
+  
+  
+  <article itemscope itemtype="http://schema.org/Article" class="post-block" lang="zh">
+    <link itemprop="mainEntityOfPage" href="http://example.com/2022/10/06/labs/requirements/lab2/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="image" content="/images/avatar.gif">
+      <meta itemprop="name" content="xiaoq">
+      <meta itemprop="description" content="">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="肖大强的个人博客">
+    </span>
+      <header class="post-header">
+        <h1 class="post-title" itemprop="name headline">
+          
+        </h1>
+
+        <div class="post-meta">
+            <span class="post-meta-item">
+              <span class="post-meta-item-icon">
+                <i class="far fa-calendar"></i>
+              </span>
+              <span class="post-meta-item-text">Posted on</span>
+              
+
+              <time title="Created: 2022-10-06 23:06:31 / Modified: 22:55:44" itemprop="dateCreated datePublished" datetime="2022-10-06T23:06:31+08:00">2022-10-06</time>
+            </span>
+
+          
+  
+  <span class="post-meta-item">
+    
+      <span class="post-meta-item-icon">
+        <i class="far fa-comment"></i>
+      </span>
+      <span class="post-meta-item-text">Valine: </span>
+    
+    <a title="valine" href="/2022/10/06/labs/requirements/lab2/#valine-comments" itemprop="discussionUrl">
+      <span class="post-comments-count valine-comment-count" data-xid="/2022/10/06/labs/requirements/lab2/" itemprop="commentCount"></span>
+    </a>
+  </span>
+  
+  
+
+        </div>
+      </header>
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+        <h1 id="Lab2-system-calls"><a href="#Lab2-system-calls" class="headerlink" title="Lab2: system calls"></a>Lab2: system calls</h1><p>在上一个实验室中，您使用系统调用编写了一些实用程序。在本实验室中，您将向xv6添加一些新的系统调用，这将帮助您了解它们是如何工作的，并使您了解xv6内核的一些内部结构。您将在以后的实验室中添加更多系统调用。</p>
+<blockquote>
+<p>[!WARNING|label:Attention]<br>在你开始写代码之前，请阅读xv6手册《book-riscv-rev1》的第2章、第4章的第4.3节和第4.4节以及相关源代码文件：</p>
+<ul>
+<li>系统调用的用户空间代码在<em><strong>user&#x2F;user.h</strong></em>和<em><strong>user&#x2F;usys.pl</strong></em>中。</li>
+<li>内核空间代码是<em><strong>kernel&#x2F;syscall.h</strong></em>、<em><strong>kernel&#x2F;syscall.c</strong></em>。</li>
+<li>与进程相关的代码是<em><strong>kernel&#x2F;proc.h</strong></em>和<em><strong>kernel&#x2F;proc.c</strong></em>。</li>
+</ul>
+</blockquote>
+<p>要开始本章实验，请将代码切换到<strong>syscall</strong>分支：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br></pre></td><td class="code"><pre><span class="line">$ git fetch</span><br><span class="line">$ git checkout syscall</span><br><span class="line">$ make clean</span><br></pre></td></tr></table></figure>
+
+<p>如果运行<code>make grade</code>，您将看到测试分数的脚本无法执行<code>trace</code>和<code>sysinfotest</code>。您的工作是添加必要的系统调用和存根（stubs）以使它们工作。</p>
+<h1 id="System-call-tracing（moderate）"><a href="#System-call-tracing（moderate）" class="headerlink" title="System call tracing（moderate）"></a>System call tracing（moderate）</h1><blockquote>
+<p>[!TIP|label:YOUR JOB]<br>在本作业中，您将添加一个系统调用跟踪功能，该功能可能会在以后调试实验时对您有所帮助。您将创建一个新的<code>trace</code>系统调用来控制跟踪。它应该有一个参数，这个参数是一个整数“掩码”（mask），它的比特位指定要跟踪的系统调用。例如，要跟踪<code>fork</code>系统调用，程序调用<code>trace(1 &lt;&lt; SYS_fork)</code>，其中<code>SYS_fork</code>是<em><strong>kernel&#x2F;syscall.h</strong></em>中的系统调用编号。如果在掩码中设置了系统调用的编号，则必须修改xv6内核，以便在每个系统调用即将返回时打印出一行。该行应该包含进程id、系统调用的名称和返回值；您不需要打印系统调用参数。<code>trace</code>系统调用应启用对调用它的进程及其随后派生的任何子进程的跟踪，但不应影响其他进程。</p>
+</blockquote>
+<p>我们提供了一个用户级程序版本的<code>trace</code>，它运行另一个启用了跟踪的程序（参见<em><strong>user&#x2F;trace.c</strong></em>）。完成后，您应该看到如下输出：</p>
+<figure class="highlight bash"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br><span class="line">21</span><br><span class="line">22</span><br><span class="line">23</span><br><span class="line">24</span><br><span class="line">25</span><br><span class="line">26</span><br><span class="line">27</span><br><span class="line">28</span><br><span class="line">29</span><br><span class="line">30</span><br></pre></td><td class="code"><pre><span class="line">$ trace 32 grep hello README</span><br><span class="line">3: syscall <span class="built_in">read</span> -&gt; 1023</span><br><span class="line">3: syscall <span class="built_in">read</span> -&gt; 966</span><br><span class="line">3: syscall <span class="built_in">read</span> -&gt; 70</span><br><span class="line">3: syscall <span class="built_in">read</span> -&gt; 0</span><br><span class="line">$</span><br><span class="line">$ trace 2147483647 grep hello README</span><br><span class="line">4: syscall trace -&gt; 0</span><br><span class="line">4: syscall <span class="built_in">exec</span> -&gt; 3</span><br><span class="line">4: syscall open -&gt; 3</span><br><span class="line">4: syscall <span class="built_in">read</span> -&gt; 1023</span><br><span class="line">4: syscall <span class="built_in">read</span> -&gt; 966</span><br><span class="line">4: syscall <span class="built_in">read</span> -&gt; 70</span><br><span class="line">4: syscall <span class="built_in">read</span> -&gt; 0</span><br><span class="line">4: syscall close -&gt; 0</span><br><span class="line">$</span><br><span class="line">$ grep hello README</span><br><span class="line">$</span><br><span class="line">$ trace 2 usertests forkforkfork</span><br><span class="line">usertests starting</span><br><span class="line"><span class="built_in">test</span> forkforkfork: 407: syscall fork -&gt; 408</span><br><span class="line">408: syscall fork -&gt; 409</span><br><span class="line">409: syscall fork -&gt; 410</span><br><span class="line">410: syscall fork -&gt; 411</span><br><span class="line">409: syscall fork -&gt; 412</span><br><span class="line">410: syscall fork -&gt; 413</span><br><span class="line">409: syscall fork -&gt; 414</span><br><span class="line">411: syscall fork -&gt; 415</span><br><span class="line">...</span><br><span class="line">$   </span><br></pre></td></tr></table></figure>
+
+<p>在上面的第一个例子中，<code>trace</code>调用<code>grep</code>，仅跟踪了<code>read</code>系统调用。<code>32</code>是<code>1&lt;&lt;SYS_read</code>。在第二个示例中，<code>trace</code>在运行<code>grep</code>时跟踪所有系统调用；<code>2147483647</code>将所有31个低位置为1。在第三个示例中，程序没有被跟踪，因此没有打印跟踪输出。在第四个示例中，在<code>usertests</code>中测试的<code>forkforkfork</code>中所有子孙进程的<code>fork</code>系统调用都被追踪。如果程序的行为如上所示，则解决方案是正确的（尽管进程ID可能不同）</p>
+<p><strong>提示：</strong></p>
+<ul>
+<li>在<em><strong>Makefile</strong></em>的<strong>UPROGS</strong>中添加<code>$U/_trace</code></li>
+<li>运行<code>make qemu</code>，您将看到编译器无法编译<em><strong>user&#x2F;trace.c</strong></em>，因为系统调用的用户空间存根还不存在：将系统调用的原型添加到<em><strong>user&#x2F;user.h</strong></em>，存根添加到<em><strong>user&#x2F;usys.pl</strong></em>，以及将系统调用编号添加到<em><strong>kernel&#x2F;syscall.h</strong></em>，<em><strong>Makefile</strong></em>调用perl脚本<em><strong>user&#x2F;usys.pl</strong></em>，它生成实际的系统调用存根<em><strong>user&#x2F;usys.S</strong></em>，这个文件中的汇编代码使用RISC-V的<code>ecall</code>指令转换到内核。一旦修复了编译问题（*注：如果编译还未通过，尝试先<code>make clean</code>，再执行<code>make qemu</code>*），就运行<code>trace 32 grep hello README</code>；但由于您还没有在内核中实现系统调用，执行将失败。</li>
+<li>在<em><strong>kernel&#x2F;sysproc.c</strong></em>中添加一个<code>sys_trace()</code>函数，它通过将参数保存到<code>proc</code>结构体（请参见<em><strong>kernel&#x2F;proc.h</strong></em>）里的一个新变量中来实现新的系统调用。从用户空间检索系统调用参数的函数在<em><strong>kernel&#x2F;syscall.c</strong></em>中，您可以在<em><strong>kernel&#x2F;sysproc.c</strong></em>中看到它们的使用示例。</li>
+<li>修改<code>fork()</code>（请参阅<em><strong>kernel&#x2F;proc.c</strong></em>）将跟踪掩码从父进程复制到子进程。</li>
+<li>修改<em><strong>kernel&#x2F;syscall.c</strong></em>中的<code>syscall()</code>函数以打印跟踪输出。您将需要添加一个系统调用名称数组以建立索引。</li>
+</ul>
+<h1 id="Sysinfo（moderate）"><a href="#Sysinfo（moderate）" class="headerlink" title="Sysinfo（moderate）"></a>Sysinfo（moderate）</h1><blockquote>
+<p>[!TIP|label:YOUR JOB]<br>在这个作业中，您将添加一个系统调用<code>sysinfo</code>，它收集有关正在运行的系统的信息。系统调用采用一个参数：一个指向<code>struct sysinfo</code>的指针（参见<em><strong>kernel&#x2F;sysinfo.h</strong></em>）。内核应该填写这个结构的字段：<code>freemem</code>字段应该设置为空闲内存的字节数，<code>nproc</code>字段应该设置为<code>state</code>字段不为<code>UNUSED</code>的进程数。我们提供了一个测试程序<code>sysinfotest</code>；如果输出“<strong>sysinfotest: OK</strong>”则通过。</p>
+</blockquote>
+<p><strong>提示：</strong></p>
+<ul>
+<li>在<em><strong>Makefile</strong></em>的<strong>UPROGS</strong>中添加<code>$U/_sysinfotest</code></li>
+<li>当运行<code>make qemu</code>时，<em><strong>user&#x2F;sysinfotest.c</strong></em>将会编译失败，遵循和上一个作业一样的步骤添加<code>sysinfo</code>系统调用。要在<em><strong>user&#x2F;user.h</strong></em>中声明<code>sysinfo()</code>的原型，需要预先声明<code>struct sysinfo</code>的存在：</li>
+</ul>
+<figure class="highlight c"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br></pre></td><td class="code"><pre><span class="line"><span class="class"><span class="keyword">struct</span> <span class="title">sysinfo</span>;</span></span><br><span class="line"><span class="type">int</span> <span class="title function_">sysinfo</span><span class="params">(<span class="keyword">struct</span> sysinfo *)</span>;</span><br></pre></td></tr></table></figure>
+
+<p>一旦修复了编译问题，就运行<code>sysinfotest</code>；但由于您还没有在内核中实现系统调用，执行将失败。</p>
+<ul>
+<li><code>sysinfo</code>需要将一个<code>struct sysinfo</code>复制回用户空间；请参阅<code>sys_fstat()</code>(<em><strong>kernel&#x2F;sysfile.c</strong></em>)和<code>filestat()</code>(<em><strong>kernel&#x2F;file.c</strong></em>)以获取如何使用<code>copyout()</code>执行此操作的示例。</li>
+<li>要获取空闲内存量，请在<em><strong>kernel&#x2F;kalloc.c</strong></em>中添加一个函数</li>
+<li>要获取进程数，请在<em><strong>kernel&#x2F;proc.c</strong></em>中添加一个函数</li>
+</ul>
+<h1 id="可选的挑战"><a href="#可选的挑战" class="headerlink" title="可选的挑战"></a>可选的挑战</h1><ul>
+<li>打印所跟踪的系统调用的参数（easy）。</li>
+<li>计算平均负载并通过<code>sysinfo</code>导出（moderate）。</li>
+</ul>
+
+    </div>
+
+    
+    
+    
+
+      <footer class="post-footer">
+
+        
+
+
+        
+    <div class="post-nav">
+      <div class="post-nav-item">
+    <a href="/2022/10/06/labs/requirements/lab5/" rel="prev" title="">
+      <i class="fa fa-chevron-left"></i> 
+    </a></div>
+      <div class="post-nav-item">
+    <a href="/2022/10/06/labs/requirements/lab3/" rel="next" title="">
+       <i class="fa fa-chevron-right"></i>
+    </a></div>
+    </div>
+      </footer>
+    
+  </article>
+  
+  
+  
+
+
+
+          </div>
+          
+    <div class="comments" id="valine-comments"></div>
+
+<script>
+  window.addEventListener('tabs:register', () => {
+    let { activeClass } = CONFIG.comments;
+    if (CONFIG.comments.storage) {
+      activeClass = localStorage.getItem('comments_active') || activeClass;
+    }
+    if (activeClass) {
+      let activeTab = document.querySelector(`a[href="#comment-${activeClass}"]`);
+      if (activeTab) {
+        activeTab.click();
+      }
+    }
+  });
+  if (CONFIG.comments.storage) {
+    window.addEventListener('tabs:click', event => {
+      if (!event.target.matches('.tabs-comment .tab-content .tab-pane')) return;
+      let commentClass = event.target.classList[1];
+      localStorage.setItem('comments_active', commentClass);
+    });
+  }
+</script>
+
+        </div>
+          
+  
+  <div class="toggle sidebar-toggle">
+    <span class="toggle-line toggle-line-first"></span>
+    <span class="toggle-line toggle-line-middle"></span>
+    <span class="toggle-line toggle-line-last"></span>
+  </div>
+
+  <aside class="sidebar">
+    <div class="sidebar-inner">
+
+      <ul class="sidebar-nav motion-element">
+        <li class="sidebar-nav-toc">
+          Table of Contents
+        </li>
+        <li class="sidebar-nav-overview">
+          Overview
+        </li>
+      </ul>
+
+      <!--noindex-->
+      <div class="post-toc-wrap sidebar-panel">
+          <div class="post-toc motion-element"><ol class="nav"><li class="nav-item nav-level-1"><a class="nav-link" href="#Lab2-system-calls"><span class="nav-number">1.</span> <span class="nav-text">Lab2: system calls</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#System-call-tracing%EF%BC%88moderate%EF%BC%89"><span class="nav-number">2.</span> <span class="nav-text">System call tracing（moderate）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#Sysinfo%EF%BC%88moderate%EF%BC%89"><span class="nav-number">3.</span> <span class="nav-text">Sysinfo（moderate）</span></a></li><li class="nav-item nav-level-1"><a class="nav-link" href="#%E5%8F%AF%E9%80%89%E7%9A%84%E6%8C%91%E6%88%98"><span class="nav-number">4.</span> <span class="nav-text">可选的挑战</span></a></li></ol></div>
+      </div>
+      <!--/noindex-->
+
+      <div class="site-overview-wrap sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+  <p class="site-author-name" itemprop="name">xiaoq</p>
+  <div class="site-description" itemprop="description"></div>
+</div>
+<div class="site-state-wrap motion-element">
+  <nav class="site-state">
+      <div class="site-state-item site-state-posts">
+          <a href="/archives/">
+        
+          <span class="site-state-item-count">134</span>
+          <span class="site-state-item-name">posts</span>
+        </a>
+      </div>
+  </nav>
+</div>
+
+
+
+      </div>
+
+    </div>
+  </aside>
+  <div id="sidebar-dimmer"></div>
+
+
+      </div>
+    </main>
+
+    <footer class="footer">
+      <div class="footer-inner">
+        
+
+        
+
+<div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2022</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">xiaoq</span>
+</div>
+  <div class="powered-by">Powered by <a href="https://hexo.io/" class="theme-link" rel="noopener" target="_blank">Hexo</a> & <a href="https://muse.theme-next.org/" class="theme-link" rel="noopener" target="_blank">NexT.Muse</a>
+  </div>
+
+        
+
+
+
+
+
+
+
+
+      </div>
+    </footer>
+  </div>
+
+  
+  <script src="/lib/anime.min.js"></script>
+  <script src="/lib/velocity/velocity.min.js"></script>
+  <script src="/lib/velocity/velocity.ui.min.js"></script>
+
+<script src="/js/utils.js"></script>
+
+<script src="/js/motion.js"></script>
+
+
+<script src="/js/schemes/muse.js"></script>
+
+
+<script src="/js/next-boot.js"></script>
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+  
+
+
+<script>
+NexT.utils.loadComments(document.querySelector('#valine-comments'), () => {
+  NexT.utils.getScript('//unpkg.com/valine/dist/Valine.min.js', () => {
+    var GUEST = ['nick', 'mail', 'link'];
+    var guest = 'nick,mail,link';
+    guest = guest.split(',').filter(item => {
+      return GUEST.includes(item);
+    });
+    new Valine({
+      el         : '#valine-comments',
+      verify     : false,
+      notify     : false,
+      appId      : 'nPTQNF98hlhFVhx3uT28h3EW-gzGzoHsz',
+      appKey     : 'Hj5CW3nJJnJ3rBlGeKK8XQLa',
+      placeholder: "Just go go",
+      avatar     : 'mm',
+      meta       : guest,
+      pageSize   : '10' || 10,
+      visitor    : false,
+      lang       : 'zh-cn' || 'zh-cn',
+      path       : location.pathname,
+      recordIP   : false,
+      serverURLs : ''
+    });
+  }, window.Valine);
+});
+</script>
+
+</body>
+</html>
