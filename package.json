@@ -1,18 +1,20 @@
 {
-  "name": "vuepress-theme-reco-",
-  "version": "2.0.0",
-  "description": "Demo for vuepress-theme-reco@2.x.",
-  "repository": "git@github.com:recoluan/vuepress-theme-reco-demo.git",
-  "author": "bai_tao",
-  "scripts": {
-    "dev": "vuepress dev .",
-    "start": "vuepress dev .",
-    "build": "vuepress build ."
-  },
-  "dependencies": {
-    "@vuepress-reco/vuepress-plugin-bgm-player": "^1.1.4",
-    "vuepress": "2.0.0-beta.63",
-    "vuepress-plugin-comment": "^0.7.3",
-    "vuepress-theme-reco": "2.0.0-beta.66"
-  }
+    "name": "vuepress-theme-reco-",
+    "version": "2.0.0",
+    "description": "Demo for vuepress-theme-reco@2.x.",
+    "repository": "git@github.com:recoluan/vuepress-theme-reco-demo.git",
+    "author": "bai_tao",
+    "scripts": {
+        "dev": "vuepress dev .",
+        "start": "vuepress dev .",
+        "build": "vuepress build ."
+    },
+    "dependencies": {
+        "vue": "^3.5.0",
+        "vuepress": "2.0.0-rc.18",
+        "vuepress-theme-reco": "2.0.0-rc.18",
+        "@vuepress/bundler-vite": "2.0.0-rc.18",
+        "vuepress-plugin-comment": "^0.7.3",
+        "@vuepress-reco/vuepress-plugin-bgm-player": "^1.1.4"
+    }
 }
