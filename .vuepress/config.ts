@@ -3,6 +3,7 @@ import type { DefaultThemeOptions } from "vuepress";
 import recoTheme from "vuepress-theme-reco";
 
 export default defineUserConfig({
+  base: "/clrlov.github.io/",
   title: "白桃与猫",
   description: "life is like a cup of latte, and cat will make it unlonely",
   head: [
