@@ -7,8 +7,8 @@ export default defineUserConfig({
         viteOptions: {},
         vuePluginOptions: {}
     }),
-    base: "/xiaodaqiang-1024.github.io/",
-    title: "白桃与猫",
+    base: "/",
+    title: "白桃与猫11",
     description: "life is like a cup of latte, and cat will make it unlonely",
     head: [["link", { rel: "icon", href: "/favicon.ico" }]],
     // https://github.com/vuepress-reco/vuepress-theme-reco/blob/main/packages/vuepress-theme-reco/src/types/options.ts
@@ -20,7 +20,7 @@ export default defineUserConfig({
         authorAvatar: "/avatar.jpg",
         lastUpdatedText: "最近更新",
         navbar: [
-            { text: "首页", link: "/", icon: "Home" },
+            { text: "首页1", link: "/", icon: "Home" },
             { text: "分类", link: "/categories/qianduan/1/", icon: "Category" },
             { text: "标签", link: "/tags/javaScript/1/", icon: "Tag" },
             { text: "时间轴", link: "/timeline", icon: "Time" },
